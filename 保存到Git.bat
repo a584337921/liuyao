@@ -1,12 +1,12 @@
 @echo off
 cd /d "%~dp0"
-echo 正在保存到 Git...
+echo Saving to Git...
 git add .
-git commit -m "备份"
+git commit -m "backup"
 echo.
-echo ===== 最近3条记录 =====
+echo === Last 3 commits ===
 git log --oneline -3
 echo.
-echo 备份完成
+echo Done
 echo.
 pause
