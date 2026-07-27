@@ -682,6 +682,13 @@ body {
   color: var(--accent);
   font-weight: 600;
 }
+.gua-overview-text .gua-text-tag {
+  font-size: 0.75rem;
+  margin-left: 0.3rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.04);
+}
 .gua-overview-sub {
   font-size: 0.72rem;
   color: var(--muted);
@@ -1644,10 +1651,16 @@ function determineGongAndShiYing(code) {
 function getNaJia(lineIndex, lowerName, upperName) {
   const lowerInfo = HUN_TIAN_JIA_ZI[lowerName] || HUN_TIAN_JIA_ZI['乾'];
   const upperInfo = HUN_TIAN_JIA_ZI[upperName] || HUN_TIAN_JIA_ZI['乾'];
-  const naJia = lineIndex < 3 ? lowerInfo.nei[lineIndex] : upperInfo.wai[lineIndex - 3];
+  const lowerGan = NA_JIA_TIAN_GAN[lowerName] || NA_JIA_TIAN_GAN['乾'];
+  const upperGan = NA_JIA_TIAN_GAN[upperName] || NA_JIA_TIAN_GAN['乾'];
+  const isInner = lineIndex < 3;
+  const naJia = isInner ? lowerInfo.nei[lineIndex] : upperInfo.wai[lineIndex - 3];
+  const tianGan = isInner ? lowerGan.nei : upperGan.wai;
   const diZhi = naJia.substring(0, 1);
   return {
     label: naJia,
+    tianGan: tianGan,
+    fullLabel: tianGan + naJia,
     wuXing: DI_ZHI_WU_XING[diZhi] || '金'
   };
 }
@@ -2034,7 +2047,7 @@ function calcBianYaoInfo(yaoData, trigrams, gongInfo, monthJian, dayGanZhi, xunK
     var origBranch = yaoData[j].branch;
 
     var analysis = [];
-    var label = YAO_POSITIONS[j] + ' ' + yaoData[j].naJia + ' → ' + bianNaJia.label;
+    var label = YAO_POSITIONS[j] + ' ' + (yaoData[j].fullNaJia || yaoData[j].naJia) + ' → ' + bianNaJia.fullLabel;
 
     // 1. 化进神/化退神（同五行）
     if (bianElement === origElement) {
@@ -2124,6 +2137,7 @@ function findFuShen(yongLiuQin, yaoData, trigrams, gongInfo, monthJian, dayBranc
         fuShenYao = {
           position: j + 1,
           naJia: benNaJiaArr[j].label,
+          fullNaJia: benNaJiaArr[j].fullLabel,
           branch: benNaJiaArr[j].label.charAt(0),
           element: benNaJiaArr[j].wuXing,
           liuQin: benLiuQin[j]
@@ -2209,7 +2223,7 @@ function checkSanHeJu(yaoData, monthBranch, dayBranch) {
   var allBranches = [];
   for (var i = 0; i < 6; i++) {
     if (yaoData[i].dong || yaoData[i].shiYing === '世' || yaoData[i].shiYing === '应') {
-      allBranches.push({ branch: yaoData[i].branch, pos: i, source: YAO_POSITIONS[i] + yaoData[i].naJia });
+      allBranches.push({ branch: yaoData[i].branch, pos: i, source: YAO_POSITIONS[i] + (yaoData[i].fullNaJia || yaoData[i].naJia) });
     }
   }
   // 月建和日辰也可参与合局
@@ -2313,15 +2327,25 @@ function calcShenSha(yaoData, dayGanZhi, shiPos) {
   var dayStem = dayGanZhi.charAt(0);
   var result = { guaShen: null, yiMa: '—', taoHua: '—', riLu: '—' };
 
-  // 1. 卦身：阳世寻阴爻，阴世寻阳爻（从世爻往下数）
+  // 1. 卦身（月卦身）：依据《增删卜易》
+  // 阳世还从子月生：世爻为阳，从初爻起子、二爻丑...数到世爻，所得地支即为卦身
+  // 阴世则从午月起：世爻为阴，从初爻起午、二爻未...数到世爻，所得地支即为卦身
+  // 然后看卦中哪一爻的纳甲地支与此地支相同，该爻即为卦身所在
   if (shiPos && yaoData[shiPos - 1]) {
     var shiIsYang = yaoData[shiPos - 1].yaoInfo.type === 'yang';
-    for (var i = shiPos - 1; i >= 0; i--) {
-      var yaoIsYang = yaoData[i].yaoInfo.type === 'yang';
-      if (shiIsYang !== yaoIsYang) {
-        result.guaShen = { pos: i + 1, yao: yaoData[i] };
+    var diZhi12 = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    var startIndex = shiIsYang ? 0 : 6; // 阳世从子(0)起，阴世从午(6)起
+    var guaShenBranch = diZhi12[(startIndex + shiPos - 1) % 12];
+    // 在卦中查找该地支所在的爻
+    for (var i = 0; i < 6; i++) {
+      if (yaoData[i].branch === guaShenBranch) {
+        result.guaShen = { pos: i + 1, yao: yaoData[i], branch: guaShenBranch };
         break;
       }
+    }
+    // 若卦中无此爻（卦身不上卦），记录地支以便显示
+    if (!result.guaShen) {
+      result.guaShen = { pos: 0, yao: null, branch: guaShenBranch };
     }
   }
 
@@ -2345,7 +2369,7 @@ function renderShenSha(shenSha) {
   var html = '';
   // 卦身（紫色高亮）
   if (shenSha.guaShen) {
-    html += '<span style="color:#7c3aed;font-weight:700">卦身：' + YAO_POSITIONS[shenSha.guaShen.pos - 1] + shenSha.guaShen.yao.naJia + '</span>';
+    html += '<span style="color:#7c3aed;font-weight:700">卦身：' + YAO_POSITIONS[shenSha.guaShen.pos - 1] + (shenSha.guaShen.yao.fullNaJia || shenSha.guaShen.yao.naJia) + '</span>';
   } else {
     html += '<span style="color:#7c3aed;font-weight:700">卦身：不上卦</span>';
   }
@@ -2431,6 +2455,8 @@ function interpret() {
       position: j + 1,
       yaoInfo: state.lines[j],
       naJia: naJiaArr[j].label,
+      tianGan: naJiaArr[j].tianGan,
+      fullNaJia: naJiaArr[j].fullLabel,
       branch: branch,
       element: element,
       liuQin: liuQin[j],
@@ -2530,7 +2556,7 @@ function backToGuaXiang() {
 }
 
 /** 渲染卦象概览（纯文本格式） */
-function renderGuaOverview(yaoData, gongInfo, trigrams) {
+function renderGuaOverview(yaoData, gongInfo, trigrams, guaChongHe) {
   var binaryLines = yaoData.map(function(y) { return y.yaoInfo.binary; });
   var guaData = lookupGua(binaryLines);
 
@@ -2549,6 +2575,11 @@ function renderGuaOverview(yaoData, gongInfo, trigrams) {
   html += '<span class="gua-text-name">' + guaData.name + '</span>';
   if (guaData.desc) {
     html += '<span class="gua-text-desc">（' + guaData.desc + '）</span>';
+  }
+  // 六冲卦/六合卦标注
+  if (guaChongHe) {
+    if (guaChongHe.isLiuChong) html += '<span class="gua-text-tag" style="color:var(--accent2);font-weight:700">六冲</span>';
+    if (guaChongHe.isLiuHe) html += '<span class="gua-text-tag" style="color:var(--accent3);font-weight:700">六合</span>';
   }
   if (bianGuaData) {
     html += '<span class="gua-text-arrow"> → </span>';
@@ -2703,7 +2734,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
     var bianLiuQinArr = assignLiuQin(bianNaJiaArr, gongInfo.gongAttr);
     // 填充全部6爻
     for (var bm = 0; bm < 6; bm++) {
-      bianNaJiaMap[bm] = { naJia: bianNaJiaArr[bm].label, liuQin: bianLiuQinArr[bm], label: '' };
+      bianNaJiaMap[bm] = { naJia: bianNaJiaArr[bm].fullLabel, liuQin: bianLiuQinArr[bm], label: '' };
     }
     // 动爻额外标注动变关系
     if (dongBianAnalyses && dongBianAnalyses.length > 0) {
@@ -2779,7 +2810,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
     // 伏神标记：如果该爻位下有伏神，显示小标记
     if (fuShenResult && fuShenResult.feiShen.position === yd.position) {
       var fs = fuShenResult.fuShen;
-      var fsTitle = '伏神：' + fs.naJia + '（' + fs.liuQin + '·' + fs.element + '）\n关系：' + fuShenResult.relation + ' — ' + fuShenResult.relDetail;
+      var fsTitle = '伏神：' + (fs.fullNaJia || fs.naJia) + '（' + fs.liuQin + '·' + fs.element + '）\n关系：' + fuShenResult.relation + ' — ' + fuShenResult.relDetail;
       statusParts.push('<span class="tag-fushen" title="' + fsTitle + '">伏:' + fs.liuQin + fs.naJia.charAt(0) + '</span>');
     }
     var statusHtml = statusParts.join(' ');
@@ -2788,7 +2819,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
     tableHtml += '<td class="yao-pos">' + YAO_POSITIONS[i] + '</td>';
     tableHtml += '<td class="yao-sym ' + symClass + '">' + symText + '</td>';
     tableHtml += '<td>' + shiYingHtml + '</td>';
-    tableHtml += '<td>' + yd.naJia + '</td>';
+    tableHtml += '<td>' + yd.fullNaJia + '</td>';
     tableHtml += '<td>' + yd.liuShen + '</td>';
     tableHtml += '<td>' + yd.liuQin + '</td>';
     tableHtml += '<td class="' + wsClass + '">' + yd.wangShuai + '</td>';
@@ -2821,7 +2852,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
     var ys = yongShen.yao;
     barHtml += '<div class="bar-item">';
     barHtml += '<span class="bar-label ys">用神</span>';
-    barHtml += '<span class="bar-value">' + YAO_POSITIONS[ys.position - 1] + ' ' + ys.naJia + '（' + ys.liuQin + '·' + ys.element + '）';
+    barHtml += '<span class="bar-value">' + YAO_POSITIONS[ys.position - 1] + ' ' + (ys.fullNaJia || ys.naJia) + '（' + ys.liuQin + '·' + ys.element + '）';
     if (ys.changSheng && ys.changSheng !== '—') barHtml += ' ' + ys.changSheng;
     barHtml += '</span>';
     var ysStatusText = ys.strength.status === 'strong' ? '旺' : (ys.strength.status === 'weak' ? '衰' : '平');
@@ -2832,7 +2863,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
     var yus = yuanShen;
     barHtml += '<div class="bar-item">';
     barHtml += '<span class="bar-label yuan">元神</span>';
-    barHtml += '<span class="bar-value">' + YAO_POSITIONS[yus.position - 1] + ' ' + yus.naJia + '（' + yus.liuQin + '·' + yus.element + '）';
+    barHtml += '<span class="bar-value">' + YAO_POSITIONS[yus.position - 1] + ' ' + (yus.fullNaJia || yus.naJia) + '（' + yus.liuQin + '·' + yus.element + '）';
     if (yus.changSheng && yus.changSheng !== '—') barHtml += ' ' + yus.changSheng;
     barHtml += '</span>';
     var yusText = yus.strength.status === 'strong' ? '旺' : (yus.strength.status === 'weak' ? '衰' : '平');
@@ -2843,7 +2874,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
     var js = jiShen;
     barHtml += '<div class="bar-item">';
     barHtml += '<span class="bar-label ji">忌神</span>';
-    barHtml += '<span class="bar-value">' + YAO_POSITIONS[js.position - 1] + ' ' + js.naJia + '（' + js.liuQin + '·' + js.element + '）';
+    barHtml += '<span class="bar-value">' + YAO_POSITIONS[js.position - 1] + ' ' + (js.fullNaJia || js.naJia) + '（' + js.liuQin + '·' + js.element + '）';
     if (js.changSheng && js.changSheng !== '—') barHtml += ' ' + js.changSheng;
     barHtml += '</span>';
     var jsText = js.strength.status === 'strong' ? '旺' : (js.strength.status === 'weak' ? '衰' : '平');
@@ -2854,7 +2885,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
     var cs = chouShen;
     barHtml += '<div class="bar-item">';
     barHtml += '<span class="bar-label chou">仇神</span>';
-    barHtml += '<span class="bar-value">' + YAO_POSITIONS[cs.position - 1] + ' ' + cs.naJia + '（' + cs.liuQin + '·' + cs.element + '）</span>';
+    barHtml += '<span class="bar-value">' + YAO_POSITIONS[cs.position - 1] + ' ' + (cs.fullNaJia || cs.naJia) + '（' + cs.liuQin + '·' + cs.element + '）</span>';
     barHtml += '</div>';
   }
   if (!yongShen || !yongShen.yao) {
@@ -2862,7 +2893,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
       var fs2 = fuShenResult;
       barHtml += '<div class="bar-item">';
       barHtml += '<span class="bar-label fs">伏神</span>';
-      barHtml += '<span class="bar-value">' + YAO_POSITIONS[fs2.fuShen.position - 1] + '位伏 ' + fs2.fuShen.naJia + '（' + fs2.fuShen.liuQin + '·' + fs2.fuShen.element + '）';
+      barHtml += '<span class="bar-value">' + YAO_POSITIONS[fs2.fuShen.position - 1] + '位伏 ' + (fs2.fuShen.fullNaJia || fs2.fuShen.naJia) + '（' + fs2.fuShen.liuQin + '·' + fs2.fuShen.element + '）';
       if (fs2.changSheng && fs2.changSheng !== '—') barHtml += ' ' + fs2.changSheng;
       barHtml += '</span>';
       var fsStatusClass = fs2.wangShuai === '旺' || fs2.wangShuai === '相' ? 'strong' : (fs2.wangShuai === '休' || fs2.wangShuai === '囚' ? 'weak' : 'neutral');
@@ -2932,7 +2963,7 @@ function renderPlainLanguage(yaoData, yongShen, yuanShen, jiShen, chouShen, mont
 /** 渲染解卦结果（增删卜易+火珠林版） */
 function renderInterpretation(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, monthGanZhi, dayGanZhi, xunKong, topic, gongInfo, trigrams, dongBianAnalyses, fuShenResult, sanHeJu, guaChongHe, yaoChongHe, fanYinFuYin, guiHunYouHun) {
   // 1. 卦象概览（含归魂游魂标注）
-  renderGuaOverview(yaoData, gongInfo, trigrams);
+  renderGuaOverview(yaoData, gongInfo, trigrams, guaChongHe);
   // 2. 术语渲染到 hexagramTerms
   renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, monthGanZhi, dayGanZhi, xunKong, topic, gongInfo, trigrams, dongBianAnalyses, fuShenResult, sanHeJu, guaChongHe, yaoChongHe, fanYinFuYin, guiHunYouHun);
   // 3. 大白话渲染到 interpretResult
@@ -2959,7 +2990,7 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
 
   // === 世爻/应爻分析 ===
   if (shiYao) {
-    html += '<p><strong>世爻</strong>：' + YAO_POSITIONS[shiYao.position - 1] + ' ' + shiYao.naJia + '（' + shiYao.liuQin + '·' + shiYao.element + '）';
+    html += '<p><strong>世爻</strong>：' + YAO_POSITIONS[shiYao.position - 1] + ' ' + (shiYao.fullNaJia || shiYao.naJia) + '（' + shiYao.liuQin + '·' + shiYao.element + '）';
     html += '，' + (shiYao.dong ? '发动' : '安静') + '，旺衰<strong>' + shiYao.wangShuai + '</strong>。';
     if (yongShen && yongShen.yao) {
       if (yongShen.yao.position === shiYao.position) {
@@ -2978,7 +3009,7 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
     html += '</p>';
   }
   if (yingYao) {
-    html += '<p><strong>应爻</strong>：' + YAO_POSITIONS[yingYao.position - 1] + ' ' + yingYao.naJia + '（' + yingYao.liuQin + '·' + yingYao.element + '）';
+    html += '<p><strong>应爻</strong>：' + YAO_POSITIONS[yingYao.position - 1] + ' ' + (yingYao.fullNaJia || yingYao.naJia) + '（' + yingYao.liuQin + '·' + yingYao.element + '）';
     html += '，' + (yingYao.dong ? '发动' : '安静') + '，旺衰<strong>' + yingYao.wangShuai + '</strong>。';
     if (yingYao.dong) html += '应爻发动，对方或环境有变，事体多因外因而动。';
     else html += '应爻安静，对方或环境暂无变动。';
@@ -3019,10 +3050,10 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
     if (fuShenResult) {
       var fs = fuShenResult;
       html += '<div class="fu-shen-info">';
-      html += '<p><strong>伏神</strong>：' + YAO_POSITIONS[fs.fuShen.position - 1] + '位伏' + fs.fuShen.naJia + '（' + fs.fuShen.liuQin + '·' + fs.fuShen.element + '），旺衰为<strong>' + fs.wangShuai + '</strong>';
+      html += '<p><strong>伏神</strong>：' + YAO_POSITIONS[fs.fuShen.position - 1] + '位伏' + (fs.fuShen.fullNaJia || fs.fuShen.naJia) + '（' + fs.fuShen.liuQin + '·' + fs.fuShen.element + '），旺衰为<strong>' + fs.wangShuai + '</strong>';
       if (fs.changSheng && fs.changSheng !== '—') html += '，' + fs.changSheng;
       html += '。</p>';
-      html += '<p><strong>飞神</strong>：' + YAO_POSITIONS[fs.feiShen.position - 1] + ' ' + fs.feiShen.naJia + '（' + fs.feiShen.liuQin + '·' + fs.feiShen.element + '）。</p>';
+      html += '<p><strong>飞神</strong>：' + YAO_POSITIONS[fs.feiShen.position - 1] + ' ' + (fs.feiShen.fullNaJia || fs.feiShen.naJia) + '（' + fs.feiShen.liuQin + '·' + fs.feiShen.element + '）。</p>';
       html += '<p><strong>伏飞关系</strong>：' + fs.relation + '。' + fs.relDetail + '</p>';
       if (fs.kong) html += '<p>伏神落旬空——<strong>' + fs.kongType + '</strong>。</p>';
       if (fs.chuFuConditions.length > 0) {
@@ -3041,7 +3072,7 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
   var ys = yongShen.yao;
   var ysStr = ys.strength;
 
-  html += '<p><strong>用神</strong>：' + YAO_POSITIONS[ys.position - 1] + ' ' + ys.naJia + '（' + ys.liuQin + '·' + ys.element + '），旺衰为<strong>' + ys.wangShuai + '</strong>';
+  html += '<p><strong>用神</strong>：' + YAO_POSITIONS[ys.position - 1] + ' ' + (ys.fullNaJia || ys.naJia) + '（' + ys.liuQin + '·' + ys.element + '），旺衰为<strong>' + ys.wangShuai + '</strong>';
   if (ys.changSheng && ys.changSheng !== '—') html += '，' + ys.changSheng;
   html += '。';
 
@@ -3077,7 +3108,7 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
   // 元神分析
   if (yuanShen) {
     var yus = yuanShen;
-    html += '<p><strong>元神</strong>：' + YAO_POSITIONS[yus.position - 1] + ' ' + yus.naJia + '（' + yus.liuQin + '·' + yus.element + '），' + (yus.dong ? '发动' : '安静') + '，旺衰为<strong>' + yus.wangShuai + '</strong>';
+    html += '<p><strong>元神</strong>：' + YAO_POSITIONS[yus.position - 1] + ' ' + (yus.fullNaJia || yus.naJia) + '（' + yus.liuQin + '·' + yus.element + '），' + (yus.dong ? '发动' : '安静') + '，旺衰为<strong>' + yus.wangShuai + '</strong>';
     if (yus.changSheng && yus.changSheng !== '—') html += '，' + yus.changSheng;
     html += '。';
     // 新增：月建/日辰对元神的直接影响
@@ -3095,7 +3126,7 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
   // 忌神分析
   if (jiShen) {
     var js = jiShen;
-    html += '<p><strong>忌神</strong>：' + YAO_POSITIONS[js.position - 1] + ' ' + js.naJia + '（' + js.liuQin + '·' + js.element + '），' + (js.dong ? '发动' : '安静') + '，旺衰为<strong>' + js.wangShuai + '</strong>';
+    html += '<p><strong>忌神</strong>：' + YAO_POSITIONS[js.position - 1] + ' ' + (js.fullNaJia || js.naJia) + '（' + js.liuQin + '·' + js.element + '），' + (js.dong ? '发动' : '安静') + '，旺衰为<strong>' + js.wangShuai + '</strong>';
     if (js.changSheng && js.changSheng !== '—') html += '，' + js.changSheng;
     html += '。';
     // 新增：月建/日辰对忌神的直接影响
@@ -3112,7 +3143,7 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
 
   // 仇神分析
   if (chouShen) {
-    html += '<p><strong style="color:var(--accent2)">仇神</strong>：' + YAO_POSITIONS[chouShen.position - 1] + ' ' + chouShen.naJia + '（' + chouShen.liuQin + '·' + chouShen.element + '），克元神、生忌神，助纣为虐。仇神发动则大凶。</p>';
+    html += '<p><strong style="color:var(--accent2)">仇神</strong>：' + YAO_POSITIONS[chouShen.position - 1] + ' ' + (chouShen.fullNaJia || chouShen.naJia) + '（' + chouShen.liuQin + '·' + chouShen.element + '），克元神、生忌神，助纣为虐。仇神发动则大凶。</p>';
   }
 
   // 动爻变爻详细分析
