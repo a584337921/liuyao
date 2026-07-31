@@ -11,6 +11,7 @@
   --bg2: #f8f9fa;
   --bg3: #f1f3f5;
   --bg4: #e9ecef;
+  --bg-alt: #f8f9fa;
   --ink: #1a1a2e;
   --ink-bright: #000000;
   --muted: #6c757d;
@@ -1194,6 +1195,7 @@ var LIU_SHEN_KB = KB.LIU_SHEN;
 var FU_SHEN_RULES = KB.FU_SHEN_RULES;
 var DONG_BIAN_RULES = KB.DONG_BIAN_RULES;
 var HUO_ZHU_LIN = KB.HUO_ZHU_LIN;
+var NA_JIA_TIAN_GAN = KB.NA_JIA_TIAN_GAN;
 
 // ========== State ==========
 let state = {
@@ -2368,8 +2370,10 @@ function calcShenSha(yaoData, dayGanZhi, shiPos) {
 function renderShenSha(shenSha) {
   var html = '';
   // 卦身（紫色高亮）
-  if (shenSha.guaShen) {
+  if (shenSha.guaShen && shenSha.guaShen.yao) {
     html += '<span style="color:#7c3aed;font-weight:700">卦身：' + YAO_POSITIONS[shenSha.guaShen.pos - 1] + (shenSha.guaShen.yao.fullNaJia || shenSha.guaShen.yao.naJia) + '</span>';
+  } else if (shenSha.guaShen && shenSha.guaShen.branch) {
+    html += '<span style="color:#7c3aed;font-weight:700">卦身：不上卦（' + shenSha.guaShen.branch + '）</span>';
   } else {
     html += '<span style="color:#7c3aed;font-weight:700">卦身：不上卦</span>';
   }
@@ -2939,13 +2943,183 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
   document.getElementById('hexagramTerms').innerHTML = termsHtml;
 }
 
+/** 匹配黄金策分类（根据用户问题文字） */
+function matchHuangJinCeCategory(topic) {
+  var text = (topic || '').trim();
+  if (!text) return null;
+  var kb = window.LIUYAO_KB && window.LIUYAO_KB.BU_SHI_ZHENG_ZONG;
+  if (!kb || !kb.huangJinCe || !kb.huangJinCe.categories) return null;
+
+  // 关键词 → 分类名映射
+  var mapping = [
+    { keys: ['天气','下雨','雨','晴','雪','风','雷','阴天','气象'], cat: '天时' },
+    { keys: ['年运','年景','丰收','饥荒','瘟疫','灾害','国运'], cat: '年时' },
+    { keys: ['国家','朝代','政局','朝廷'], cat: '国朝' },
+    { keys: ['战争','打仗','出征','军事','胜负','交战','战斗'], cat: '征战' },
+    { keys: ['避难','逃难','躲避','避乱'], cat: '避乱' },
+    { keys: ['终身','一生','命运','寿命','前程','运气','八字'], cat: '身命' },
+    { keys: ['求学','拜师','老师','师傅','学艺','师傅','书馆'], cat: '求师' },
+    { keys: ['功名','考试','科举','升学','高考','考研','考公','考编','文凭','学历','录取','成绩','名次'], cat: '求名' },
+    { keys: ['升迁','升职','调动','仕途','官运','在任','罢官','免职','升官'], cat: '仕宦' },
+    { keys: ['婚姻','结婚','对象','相亲','恋爱','姻缘','嫁娶','未婚','已婚','配偶','男友','女友','谈对象','感情','复合','分手'], cat: '婚姻' },
+    { keys: ['怀孕','生产','生育','临产','胎儿','胎产','生男生女','预产期','安胎'], cat: '产育' },
+    { keys: ['收养','过继','买婢','雇人','招人','纳妾'], cat: '进人口' },
+    { keys: ['痘疹','水痘','天花','麻疹'], cat: '痘疹' },
+    { keys: ['病','疾病','疾','患病','生病','症状','发热','咳嗽','不舒服','身体'], cat: '病症' },
+    { keys: ['病情','病体','康复','痊愈','愈后','住院','出院','病危'], cat: '病体' },
+    { keys: ['药','医药','医生','治疗','处方','吃药','看医','问医','疗效'], cat: '医药' },
+    { keys: ['种植','庄稼','收成','种田','农业','耕种','水稻','小麦'], cat: '种作' },
+    { keys: ['蚕','桑','养蚕','蚕桑','丝绸'], cat: '蚕桑' },
+    { keys: ['六畜','牛','马','羊','鸡','鸭','鹅','猪','狗','猫','养殖','牲畜'], cat: '六畜' },
+    { keys: ['求财','买卖','生意','交易','经商','开店','投资','理财','利润','赚钱','财运','贸易','进货','出货','合伙生意'], cat: '商贾（求财买卖）' },
+    { keys: ['学馆','教书','开馆','私塾','束修'], cat: '学馆' },
+    { keys: ['词讼','官司','诉讼','起诉','被告','原告','官非','纠纷','法庭','打官司','起诉','应诉'], cat: '词讼（诉讼官非）' },
+    { keys: ['逃亡','逃跑','走失','离家','出走','在逃'], cat: '逃亡' },
+    { keys: ['丢失','失物','被盗','偷','贼','遗失','找东西','失脱'], cat: '失脱（盗贼捕盗捉贼）' },
+    { keys: ['家宅','房子','住宅','屋宅','搬家','迁居','风水','阳宅','宅运','买房','卖房','租房'], cat: '家宅' },
+    { keys: ['坟','墓','阴宅','葬','下葬','墓地','风水','陵园','祖坟'], cat: '坟墓（风水）' },
+    { keys: ['鬼','神','鬼神','邪祟','灵异','闹鬼','附身','神灵','仙家'], cat: '鬼神' },
+    { keys: ['出行','出差','旅游','远行','赴任','出门','旅行','外出'], cat: '出行' },
+    { keys: ['行人','归期','回来','回家','在外','远归','行人何时回','出门的人'], cat: '行人' },
+    { keys: ['船','舟','渡船','航运','水运','乘船'], cat: '舟船' }
+  ];
+
+  // 按匹配度排序
+  var scores = {};
+  for (var i = 0; i < mapping.length; i++) {
+    var m = mapping[i];
+    var score = 0;
+    for (var j = 0; j < m.keys.length; j++) {
+      if (text.indexOf(m.keys[j]) !== -1) score++;
+    }
+    if (score > 0) scores[m.cat] = (scores[m.cat] || 0) + score;
+  }
+
+  var bestCat = null;
+  var bestScore = 0;
+  for (var cat in scores) {
+    if (scores[cat] > bestScore) {
+      bestScore = scores[cat];
+      bestCat = cat;
+    }
+  }
+
+  if (!bestCat) return null;
+
+  // 从知识库中查找匹配的分类
+  for (var k = 0; k < kb.huangJinCe.categories.length; k++) {
+    if (kb.huangJinCe.categories[k].name === bestCat) {
+      return kb.huangJinCe.categories[k];
+    }
+  }
+  return null;
+}
+
+/** 查找何知章匹配歌诀 */
+function getHeZhiZhangMatches(topic, yaoData, yongShen) {
+  var kb = window.LIUYAO_KB && window.LIUYAO_KB.BU_SHI_ZHENG_ZONG;
+  if (!kb || !kb.fuWenSanPian || !kb.fuWenSanPian.heZhiZhang) return [];
+  var verses = kb.fuWenSanPian.heZhiZhang.verses;
+  var matches = [];
+  var text = (topic || '').trim();
+
+  // 根据问题关键词匹配何知章歌诀
+  var topicMap = [
+    { keys: ['父母','父亲','母亲','长辈','公婆','岳父','岳母'], patterns: ['父母疾', '父母殃'] },
+    { keys: ['子孙','孩子','子女','后代','怀孕','生产','生育','胎儿'], patterns: ['有子孙', '无子孙', '子孙疾', '子孙灾', '小儿死'] },
+    { keys: ['妻','财','妻子','老婆','财运','对象','结婚','婚姻','姻缘','嫁娶','男友','女友','丈夫','老公','配偶','谈对象','感情','恋爱'], patterns: ['妻有灾', '妻有孕', '有妻妾', '损妻房', '大豪富', '进外财', '进产业', '多贫贱', '田地增'] },
+    { keys: ['兄弟','姐妹','朋友','同辈'], patterns: ['兄弟亡'] },
+    { keys: ['官司','诉讼','官非','词讼','纠纷','法庭'], patterns: ['讼事休', '讼事多'] },
+    { keys: ['人口','家人','人丁','进人口'], patterns: ['旺六丁', '进人口'] },
+    { keys: ['家宅','房子','住宅','屋','搬家','迁居','宅运'], patterns: ['灶破损', '锅破漏', '屋宇新', '屋宇败', '两灶户', '宅不宁'] },
+    { keys: ['坟','墓','阴宅','葬','祖坟','陵园'], patterns: ['墓有风', '墓有水', '无香火', '无风水'] },
+    { keys: ['口舌','是非','争吵','争竞','小人'], patterns: ['见口舌', '口舌到', '多争竞'] },
+    { keys: ['贼','盗','失物','丢失','遗失','失脱'], patterns: ['遭贼徒', '见失脱', '失衣裳', '损六畜', '失了牛', '失了鸡'] },
+    { keys: ['病','疾病','患病','症状','发热','咳嗽','不舒服','身体','康复','痊愈'], patterns: ['痘疹病', '病要死', '多梦寐'] },
+    { keys: ['鬼','怪','邪祟','灵异','闹鬼','附身'], patterns: ['出鬼怪', '人投水', '有吊颈', '孝服来'] },
+    { keys: ['出行','出差','旅游','远行','出门','旅行','外出','行人','回家','回来','在外'], patterns: ['人不来'] },
+    { keys: ['功名','考试','升迁','仕途','官运','成绩','录取','升学'], patterns: ['旺六丁', '进人口', '富贵昌'] }
+  ];
+
+  for (var i = 0; i < topicMap.length; i++) {
+    var tm = topicMap[i];
+    var matched = false;
+    for (var j = 0; j < tm.keys.length; j++) {
+      if (text.indexOf(tm.keys[j]) !== -1) { matched = true; break; }
+    }
+    if (matched) {
+      for (var v = 0; v < verses.length; v++) {
+        for (var p = 0; p < tm.patterns.length; p++) {
+          if (verses[v].indexOf(tm.patterns[p]) !== -1) {
+            if (matches.indexOf(verses[v]) === -1) matches.push(verses[v]);
+          }
+        }
+      }
+    }
+  }
+
+  return matches.slice(0, 5); // 最多返回5条
+}
+
+/** 生成黄金策要诀HTML */
+function buildHuangJinCeHtml(category, yongShen, yaoData, monthJian, dayGanZhi) {
+  if (!category) return '';
+  var html = '<div class="huangjince-section" style="margin-top:1rem;padding:0.6rem 0.8rem;border-left:3px solid var(--accent4);background:var(--bg-alt);border-radius:0 4px 4px 0">';
+  html += '<h4 style="margin:0 0 0.4rem;color:var(--accent4);font-size:0.9rem">《卜筮正宗·黄金策》— ' + category.name + '</h4>';
+
+  if (category.yongShen) {
+    html += '<p style="font-size:0.8rem;margin:0.2rem 0;color:var(--muted)"><strong>用神</strong>：' + category.yongShen + '</p>';
+  }
+
+  // 选择最相关的规则（最多3条）
+  var rulesToShow = category.rules || [];
+  var maxRules = Math.min(rulesToShow.length, 3);
+
+  // 如果有用神信息，优先选择与用神相关的规则
+  if (yongShen && yongShen.yao) {
+    var yongLiuQin = yongShen.yao.liuQin;
+    var yongEl = yongShen.yao.element;
+    // 按相关性排序规则
+    var relevantRules = [];
+    var otherRules = [];
+    for (var r = 0; r < rulesToShow.length; r++) {
+      var rule = rulesToShow[r];
+      if (rule.indexOf(yongLiuQin) !== -1 || rule.indexOf(yongEl) !== -1) {
+        relevantRules.push(rule);
+      } else {
+        otherRules.push(rule);
+      }
+    }
+    // 合并：先显示相关的，再补充其他
+    rulesToShow = relevantRules.concat(otherRules);
+    maxRules = Math.min(rulesToShow.length, 4);
+  }
+
+  html += '<ul style="margin:0.3rem 0;padding-left:1.2rem;font-size:0.8rem;line-height:1.6">';
+  for (var i = 0; i < maxRules; i++) {
+    html += '<li>' + rulesToShow[i] + '</li>';
+  }
+  html += '</ul>';
+
+  // 显示要点
+  if (category.keyPoints && category.keyPoints.length > 0) {
+    html += '<p style="font-size:0.75rem;margin:0.3rem 0 0;color:var(--muted);font-style:italic">要点：' + category.keyPoints[0] + '</p>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
 /** 渲染大白话到 interpretResult（第三步：点击查看解析） */
 function renderPlainLanguage(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, monthGanZhi, dayGanZhi, xunKong, topic, gongInfo, trigrams, dongBianAnalyses, fuShenResult, sanHeJu, guaChongHe, yaoChongHe, fanYinFuYin, guiHunYouHun) {
   // 综合判断（全书版）
   renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, monthGanZhi, dayGanZhi, xunKong, topic, gongInfo, dongBianAnalyses, fuShenResult, sanHeJu, guaChongHe, yaoChongHe, fanYinFuYin, guiHunYouHun);
 
-  // 规则参考（增补全书内容）
-  var rulesHtml = '<h4>解卦依据（《增删卜易》）</h4><ul>';
+  // 规则参考（增补全书内容 + 卜筮正宗）
+  var rulesHtml = '<h4>解卦依据</h4>';
+
+  // 增删卜易部分
+  rulesHtml += '<p style="font-weight:bold;font-size:0.85rem;margin:0.5rem 0 0.2rem">一、《增删卜易》核心法则</p><ul style="font-size:0.8rem">';
   rulesHtml += '<li><strong>用神</strong>：占何事即以何爻为用神。旺相、逢生扶则吉，休囚、逢月破旬空则凶。</li>';
   rulesHtml += '<li><strong>元神</strong>：生用神之爻。旺动化进、化回头生则有力。</li>';
   rulesHtml += '<li><strong>忌神</strong>：克用神之爻。旺动克伤用神为凶，休囚空破则无力。</li>';
@@ -2957,6 +3131,46 @@ function renderPlainLanguage(yaoData, yongShen, yuanShen, jiShen, chouShen, mont
   rulesHtml += '<li><strong>三合局</strong>：申子辰合水、亥卯未合木、寅午戌合火、巳酉丑合金，合局增力。</li>';
   rulesHtml += '<li><strong>六冲六合</strong>：六冲主散，六合主聚。卦冲爻冲皆主散，冲中逢合另有玄机。</li>';
   rulesHtml += '</ul>';
+
+  // 卜筮正宗部分
+  var buShiKb = window.LIUYAO_KB && window.LIUYAO_KB.BU_SHI_ZHENG_ZONG;
+  if (buShiKb) {
+    rulesHtml += '<p style="font-weight:bold;font-size:0.85rem;margin:0.5rem 0 0.2rem">二、《卜筮正宗》补充法则</p><ul style="font-size:0.8rem">';
+
+    // 千金赋总断
+    if (buShiKb.qianJinFu && buShiKb.qianJinFu.keyPrinciples) {
+      rulesHtml += '<li><strong>千金赋总断</strong>：' + buShiKb.qianJinFu.summary + '</li>';
+    }
+
+    // 从十八论中选取关键理论
+    if (buShiKb.shiBaLun && buShiKb.shiBaLun.theories) {
+      var keyTheories = ['反吟卦', '伏吟卦', '绝处逢生', '克处逢生', '进神', '退神', '合处逢冲', '冲中逢合'];
+      for (var t = 0; t < buShiKb.shiBaLun.theories.length; t++) {
+        var th = buShiKb.shiBaLun.theories[t];
+        if (keyTheories.indexOf(th.name) !== -1) {
+          rulesHtml += '<li><strong>' + th.name + '</strong>：' + th.explanation + '</li>';
+        }
+      }
+    }
+
+    // 黄金策分类要诀
+    var hjcCat2 = matchHuangJinCeCategory(topic);
+    if (hjcCat2) {
+      rulesHtml += '<li><strong>黄金策·' + hjcCat2.name + '</strong>：' + hjcCat2.yongShen;
+      if (hjcCat2.keyPoints && hjcCat2.keyPoints.length > 0) {
+        rulesHtml += '。' + hjcCat2.keyPoints.join('；');
+      }
+      rulesHtml += '</li>';
+    }
+
+    rulesHtml += '</ul>';
+
+    // 冲突说明
+    if (buShiKb.conflictNote) {
+      rulesHtml += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;font-style:italic">' + buShiKb.conflictNote + '</p>';
+    }
+  }
+
   document.getElementById('interpretRulesRef').innerHTML = rulesHtml;
 }
 
@@ -3065,6 +3279,14 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
     }
     html += '<div class="summary-judgment judgment-ping">用神不上卦，需查伏神研判</div>';
     html += buildDongBianHtml(dongBianAnalyses);
+
+    // 用神不上卦时也显示黄金策要诀
+    var hjcCatEarly = matchHuangJinCeCategory(topic);
+    if (hjcCatEarly) {
+      html += buildHuangJinCeHtml(hjcCatEarly, null, yaoData, monthJian, dayGanZhi);
+    }
+
+    html += '<p style="color:var(--muted);font-size:0.7rem;margin-top:0.5rem;font-style:italic">※ 以上分析以《增删卜易》为主、《卜筮正宗》为辅推演，仅供参考研习。</p>';
     document.getElementById('interpretSummary').innerHTML = html;
     return;
   }
@@ -3208,7 +3430,27 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
   }
 
   html += '<div class="summary-judgment ' + judgmentClass + '">断曰：' + judgment + '</div>';
-  html += '<p style="color:var(--muted);font-size:0.7rem;margin-top:0.5rem;font-style:italic">※ 以上分析依据《增删卜易》之法推演，仅供参考研习。占事还需结合实际情形综合判断。</p>';
+
+  // === 卜筮正宗·黄金策分类要诀 ===
+  var hjcCat = matchHuangJinCeCategory(topic);
+  if (hjcCat) {
+    html += buildHuangJinCeHtml(hjcCat, yongShen, yaoData, monthJian, dayGanZhi);
+  }
+
+  // === 何知章速断 ===
+  var hzzMatches = getHeZhiZhangMatches(topic, yaoData, yongShen);
+  if (hzzMatches.length > 0) {
+    html += '<div class="hezhizhang-section" style="margin-top:0.6rem;padding:0.5rem 0.8rem;border-left:3px solid var(--accent3);background:var(--bg-alt);border-radius:0 4px 4px 0">';
+    html += '<h4 style="margin:0 0 0.3rem;color:var(--accent3);font-size:0.85rem">《卜筮正宗·何知章》速断参考</h4>';
+    html += '<ul style="margin:0.2rem 0;padding-left:1.2rem;font-size:0.75rem;line-height:1.6;color:var(--muted)">';
+    for (var hi = 0; hi < hzzMatches.length; hi++) {
+      html += '<li>' + hzzMatches[hi] + '</li>';
+    }
+    html += '</ul>';
+    html += '</div>';
+  }
+
+  html += '<p style="color:var(--muted);font-size:0.7rem;margin-top:0.5rem;font-style:italic">※ 以上分析以《增删卜易》为主、《卜筮正宗》为辅推演，仅供参考研习。占事还需结合实际情形综合判断。</p>';
 
   document.getElementById('interpretSummary').innerHTML = html;
 }
