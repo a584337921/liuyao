@@ -60,6 +60,12 @@ body {
   color: var(--muted);
   margin-top: 0.3rem;
 }
+.app-header .version-badge {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+  font-family: monospace;
+}
 
 /* === Divination Info === */
 .divination-info {
@@ -866,6 +872,7 @@ body {
     <h1>六爻排盘</h1>
     <div class="subtitle">铜钱起卦 · 增删卜易法</div>
     <div class="source">依据《增删卜易》卷之一 占卦法章 · 野鹤老人著</div>
+    <div class="version-badge" id="appVersion">—</div>
   </header>
 
   <main>
@@ -1154,6 +1161,12 @@ body {
  * 六爻排盘 — 增删卜易铜钱起卦法
  * 依据《增删卜易》卷之一 占卦法章
  *
+ * 版本号（主版本.次版本.修订号）— 每次更新时递增
+ * 主版本：重大架构/功能更新 | 次版本：新增功能/模块 | 修订号：bug修复/优化
+ */
+const APP_VERSION = 'v2.0.0';
+
+/**
  * 起卦规则：
  * - 背（花面/无字面）= 阳
  * - 字（字面/有字面）= 阴
@@ -1207,6 +1220,9 @@ let state = {
   mode: 'coin', // 'coin' | 'select'
   divTime: null  // 起卦时锁定的年月日时辰（起卦完成时记录，解卦时使用）
 };
+
+// 显示版本号
+document.getElementById('appVersion').textContent = APP_VERSION;
 
 /** 锁定起卦时间：在起卦完成的那一刻记录页面上的年月日时辰 */
 function lockDivTime() {
