@@ -1118,6 +1118,7 @@ body {
         <div class="gz-item"><span class="gz-label">时干支</span><span class="gz-value" id="dispHourGz">—</span></div>
         <div class="gz-item"><span class="gz-label">求测</span><span class="gz-value" id="dispTopic">—</span></div>
       </div>
+      <div id="divTimeLocked" style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.3rem"></div>
       <!-- 神煞信息 -->
       <div class="shensha-display" id="shenshaDisplay" style="margin-top:0.6rem;display:flex;justify-content:center;gap:0.8rem;flex-wrap:wrap;font-size:0.75rem"></div>
       <!-- 完整术语区（第二步展示） -->
@@ -1203,8 +1204,19 @@ let state = {
   lines: [],
   coins: [false, false, false], // false=字(阴), true=背(阳)
   yaoSelections: [null, null, null, null, null, null],
-  mode: 'coin' // 'coin' | 'select'
+  mode: 'coin', // 'coin' | 'select'
+  divTime: null  // 起卦时锁定的年月日时辰（起卦完成时记录，解卦时使用）
 };
+
+/** 锁定起卦时间：在起卦完成的那一刻记录页面上的年月日时辰 */
+function lockDivTime() {
+  state.divTime = {
+    year: parseInt(document.getElementById('yearInput').value) || new Date().getFullYear(),
+    month: parseInt(document.getElementById('monthInput').value) || (new Date().getMonth() + 1),
+    day: parseInt(document.getElementById('dayInput').value) || new Date().getDate(),
+    hourZhi: document.getElementById('shichenInput').value
+  };
+}
 
 // 爻象符号映射
 const YAO_SYMBOLS = {
@@ -1289,6 +1301,7 @@ function confirmLine() {
     document.getElementById('btnConfirmCoin').disabled = true;
     document.getElementById('resultPreview').style.display = 'none';
     document.getElementById('rulesRef').style.display = 'none';
+    lockDivTime(); // 锁定起卦时间
     setTimeout(showHexagram, 300);
   }
 
@@ -1352,6 +1365,7 @@ function doPaiPan() {
     state.lines.push(YAO_SYMBOLS[state.yaoSelections[i]]);
   }
   document.getElementById('rulesRef').style.display = 'none';
+  lockDivTime(); // 锁定起卦时间
   showHexagram();
 }
 
@@ -1436,6 +1450,7 @@ function onlineRandom() {
   // 延迟显示排盘结果
   setTimeout(function() {
     document.getElementById('rulesRef').style.display = 'none';
+    lockDivTime(); // 锁定起卦时间
     showHexagram();
   }, 500);
 }
@@ -1519,19 +1534,28 @@ function hourToGanZhi(hourZhi, dayGanZhi) {
   return TIAN_GAN[hourGanIdx] + hourZhi;
 }
 
-/** 综合计算所有干支 */
+/** 综合计算所有干支（优先使用锁定的起卦时间） */
 function calcAllGanZhi() {
-  var year = parseInt(document.getElementById('yearInput').value) || 2026;
-  var month = parseInt(document.getElementById('monthInput').value) || 1;
-  var day = parseInt(document.getElementById('dayInput').value) || 1;
-  var hourZhi = document.getElementById('shichenInput').value;
+  // 若已锁定起卦时间，使用锁定的时间；否则使用当前输入框的值（起卦前实时预览用）
+  var year, month, day, hourZhi;
+  if (state.divTime) {
+    year = state.divTime.year;
+    month = state.divTime.month;
+    day = state.divTime.day;
+    hourZhi = state.divTime.hourZhi;
+  } else {
+    year = parseInt(document.getElementById('yearInput').value) || 2026;
+    month = parseInt(document.getElementById('monthInput').value) || 1;
+    day = parseInt(document.getElementById('dayInput').value) || 1;
+    hourZhi = document.getElementById('shichenInput').value;
+  }
 
   var yearGz = yearToGanZhi(year, month, day);
   var monthJian = getMonthJianZhi(month, day);
   var dayGz = dateToDayGanZhi(year, month, day);
   var hourGz = hourToGanZhi(hourZhi, dayGz);
 
-  return { yearGz: yearGz, monthJian: monthJian, dayGz: dayGz, hourGz: hourGz };
+  return { yearGz: yearGz, monthJian: monthJian, dayGz: dayGz, hourGz: hourGz, fromLocked: !!state.divTime };
 }
 
 /** 实时更新干支预览（起卦区） */
@@ -1557,6 +1581,14 @@ function updateInterpretDisplay() {
   document.getElementById('dispHourGz').textContent = gz.hourGz;
   var topic = document.getElementById('topicInput').value || '未填写';
   document.getElementById('dispTopic').textContent = topic;
+  // 显示起卦时间锁定信息
+  var lockEl = document.getElementById('divTimeLocked');
+  if (lockEl && state.divTime) {
+    var dt = state.divTime;
+    lockEl.textContent = '※ 起卦时间：' + dt.year + '年' + dt.month + '月' + dt.day + '日 ' + dt.hourZhi + '时（已锁定）';
+  } else if (lockEl) {
+    lockEl.textContent = '';
+  }
 }
 
 /** 重置 */
@@ -1566,7 +1598,8 @@ function resetAll() {
     lines: [],
     coins: [false, false, false],
     yaoSelections: [null, null, null, null, null, null],
-    mode: state.mode
+    mode: state.mode,
+    divTime: null  // 清除锁定的起卦时间
   };
 
   // 铜钱模式重置
