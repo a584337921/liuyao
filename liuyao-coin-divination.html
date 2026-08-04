@@ -81,6 +81,29 @@ body {
   margin-bottom: 0.8rem;
   text-align: center;
 }
+.cal-switch {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+  width: fit-content;
+}
+.cal-btn {
+  padding: 0.3rem 1.2rem;
+  border: none;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.cal-btn.active {
+  background: var(--ink);
+  color: var(--bg);
+}
 .divination-info .input-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -886,7 +909,11 @@ body {
     <!-- 占卦信息区（起卦前填写公历信息） -->
     <section class="divination-info" id="divinationInfo">
       <h2>占卦信息</h2>
-      <div class="input-grid">
+      <div class="cal-switch">
+        <button type="button" id="calSolarBtn" class="cal-btn active" onclick="switchCalendar('solar')">公历</button>
+        <button type="button" id="calLunarBtn" class="cal-btn" onclick="switchCalendar('lunar')">农历</button>
+      </div>
+      <div class="input-grid" id="solarInputGrid">
         <div class="input-field">
           <label>年份（公元）</label>
           <input type="number" id="yearInput" value="2026" min="1900" max="2100" oninput="updateGanZhiPreview()">
@@ -923,6 +950,51 @@ body {
             <option value="31">31日</option>
           </select>
         </div>
+      </div>
+      <div class="input-grid" id="lunarInputGrid" style="display:none">
+        <div class="input-field">
+          <label>年份（农历）</label>
+          <input type="number" id="lunarYearInput" value="2026" min="1900" max="2100" oninput="updateGanZhiPreview()">
+        </div>
+        <div class="input-field">
+          <label>月份</label>
+          <select id="lunarMonthInput" onchange="onLunarMonthChange()">
+            <option value="1">正月</option><option value="2">二月</option>
+            <option value="3">三月</option><option value="4">四月</option>
+            <option value="5">五月</option><option value="6" selected>六月</option>
+            <option value="7">七月</option><option value="8">八月</option>
+            <option value="9">九月</option><option value="10">十月</option>
+            <option value="11">冬月</option><option value="12">腊月</option>
+          </select>
+        </div>
+        <div class="input-field">
+          <label>日期</label>
+          <select id="lunarDayInput" onchange="updateGanZhiPreview()">
+            <option value="1">初一</option><option value="2">初二</option>
+            <option value="3">初三</option><option value="4">初四</option>
+            <option value="5">初五</option><option value="6">初六</option>
+            <option value="7">初七</option><option value="8">初八</option>
+            <option value="9">初九</option><option value="10">初十</option>
+            <option value="11">十一</option><option value="12">十二</option>
+            <option value="13">十三</option><option value="14">十四</option>
+            <option value="15">十五</option><option value="16">十六</option>
+            <option value="17">十七</option><option value="18">十八</option>
+            <option value="19">十九</option><option value="20">二十</option>
+            <option value="21">廿一</option><option value="22" selected>廿二</option>
+            <option value="23">廿三</option><option value="24">廿四</option>
+            <option value="25">廿五</option><option value="26">廿六</option>
+            <option value="27">廿七</option><option value="28">廿八</option>
+            <option value="29">廿九</option><option value="30">三十</option>
+          </select>
+        </div>
+        <div class="input-field" id="lunarLeapField" style="display:none">
+          <label>闰月</label>
+          <select id="lunarLeapInput" onchange="updateGanZhiPreview()">
+            <option value="0">非闰月</option>
+            <option value="1">闰月</option>
+          </select>
+        </div>
+      </div>
         <div class="input-field">
           <label>时辰</label>
           <select id="shichenInput" onchange="updateGanZhiPreview()">
@@ -1174,7 +1246,7 @@ body {
  * 版本号（主版本.次版本.修订号）— 每次更新时递增
  * 主版本：重大架构/功能更新 | 次版本：新增功能/模块 | 修订号：bug修复/优化
  */
-const APP_VERSION = 'v2.1.1';
+const APP_VERSION = 'v2.2.0';
 
 /**
  * 起卦规则：
@@ -1228,19 +1300,121 @@ let state = {
   coins: [false, false, false], // false=字(阴), true=背(阳)
   yaoSelections: [null, null, null, null, null, null],
   mode: 'coin', // 'coin' | 'select'
+  calendarMode: 'solar', // 'solar' | 'lunar'
   divTime: null  // 起卦时锁定的年月日时辰（起卦完成时记录，解卦时使用）
 };
 
 // 显示版本号
 document.getElementById('appVersion').textContent = APP_VERSION;
 
+/** 公历/农历切换 */
+function switchCalendar(mode) {
+  state.calendarMode = mode;
+  var solarBtn = document.getElementById('calSolarBtn');
+  var lunarBtn = document.getElementById('calLunarBtn');
+  var solarGrid = document.getElementById('solarInputGrid');
+  var lunarGrid = document.getElementById('lunarInputGrid');
+  if (mode === 'lunar') {
+    lunarBtn.classList.add('active');
+    solarBtn.classList.remove('active');
+    solarGrid.style.display = 'none';
+    lunarGrid.style.display = '';
+    syncLunarFromSolar();
+    onLunarMonthChange();
+  } else {
+    solarBtn.classList.add('active');
+    lunarBtn.classList.remove('active');
+    solarGrid.style.display = '';
+    lunarGrid.style.display = 'none';
+    syncSolarFromLunar();
+  }
+  updateGanZhiPreview();
+}
+
+/** 公历→农历同步：切换到农历模式时，用当前公历值反查农历 */
+function syncLunarFromSolar() {
+  var y = parseInt(document.getElementById('yearInput').value) || 2026;
+  var m = parseInt(document.getElementById('monthInput').value) || 1;
+  var d = parseInt(document.getElementById('dayInput').value) || 1;
+  try {
+    var lunar = solarToLunar(y, m, d);
+    document.getElementById('lunarYearInput').value = lunar.year;
+    document.getElementById('lunarMonthInput').value = lunar.month;
+    document.getElementById('lunarDayInput').value = lunar.day;
+    var leapField = document.getElementById('lunarLeapField');
+    var leapInput = document.getElementById('lunarLeapInput');
+    if (lunar.isLeap) {
+      leapField.style.display = '';
+      leapInput.value = '1';
+    } else {
+      var leapM = leapMonth(lunar.year);
+      if (leapM === lunar.month) {
+        leapField.style.display = '';
+        leapInput.value = '0';
+      } else {
+        leapField.style.display = 'none';
+      }
+    }
+  } catch(e) {}
+}
+
+/** 农历→公历同步：切换回公历模式时，用当前农历值反查公历 */
+function syncSolarFromLunar() {
+  var y = parseInt(document.getElementById('lunarYearInput').value) || 2026;
+  var m = parseInt(document.getElementById('lunarMonthInput').value) || 1;
+  var d = parseInt(document.getElementById('lunarDayInput').value) || 1;
+  var isLeap = document.getElementById('lunarLeapInput').value === '1';
+  try {
+    var solar = lunarToSolar(y, m, d, isLeap);
+    document.getElementById('yearInput').value = solar.year;
+    document.getElementById('monthInput').value = solar.month;
+    document.getElementById('dayInput').value = solar.day;
+  } catch(e) {}
+}
+
+/** 农历月份变更：检查是否闰月，动态显示闰月选项 */
+function onLunarMonthChange() {
+  var y = parseInt(document.getElementById('lunarYearInput').value) || 2026;
+  var m = parseInt(document.getElementById('lunarMonthInput').value) || 1;
+  var leapM = leapMonth(y);
+  var leapField = document.getElementById('lunarLeapField');
+  var leapInput = document.getElementById('lunarLeapInput');
+  if (leapM === m) {
+    leapField.style.display = '';
+    leapInput.value = '0';
+  } else {
+    leapField.style.display = 'none';
+    leapInput.value = '0';
+  }
+  updateGanZhiPreview();
+}
+
+/** 获取当前输入的公历日期（农历模式自动转换） */
+function getCurrentSolarDate() {
+  if (state.calendarMode === 'lunar') {
+    var y = parseInt(document.getElementById('lunarYearInput').value) || 2026;
+    var m = parseInt(document.getElementById('lunarMonthInput').value) || 1;
+    var d = parseInt(document.getElementById('lunarDayInput').value) || 1;
+    var isLeap = document.getElementById('lunarLeapInput').value === '1';
+    return lunarToSolar(y, m, d, isLeap);
+  } else {
+    return {
+      year: parseInt(document.getElementById('yearInput').value) || 2026,
+      month: parseInt(document.getElementById('monthInput').value) || 1,
+      day: parseInt(document.getElementById('dayInput').value) || 1
+    };
+  }
+}
+
 /** 锁定起卦时间：在起卦完成的那一刻记录页面上的年月日时辰 */
 function lockDivTime() {
+  var sd = getCurrentSolarDate();
   state.divTime = {
-    year: parseInt(document.getElementById('yearInput').value) || new Date().getFullYear(),
-    month: parseInt(document.getElementById('monthInput').value) || (new Date().getMonth() + 1),
-    day: parseInt(document.getElementById('dayInput').value) || new Date().getDate(),
-    hourZhi: document.getElementById('shichenInput').value
+    year: sd.year,
+    month: sd.month,
+    day: sd.day,
+    hourZhi: document.getElementById('shichenInput').value,
+    calendarMode: state.calendarMode
   };
 }
 
@@ -1562,7 +1736,6 @@ function hourToGanZhi(hourZhi, dayGanZhi) {
 
 /** 综合计算所有干支（优先使用锁定的起卦时间） */
 function calcAllGanZhi() {
-  // 若已锁定起卦时间，使用锁定的时间；否则使用当前输入框的值（起卦前实时预览用）
   var year, month, day, hourZhi;
   if (state.divTime) {
     year = state.divTime.year;
@@ -1570,9 +1743,10 @@ function calcAllGanZhi() {
     day = state.divTime.day;
     hourZhi = state.divTime.hourZhi;
   } else {
-    year = parseInt(document.getElementById('yearInput').value) || 2026;
-    month = parseInt(document.getElementById('monthInput').value) || 1;
-    day = parseInt(document.getElementById('dayInput').value) || 1;
+    var sd = getCurrentSolarDate();
+    year = sd.year;
+    month = sd.month;
+    day = sd.day;
     hourZhi = document.getElementById('shichenInput').value;
   }
 
@@ -1616,6 +1790,22 @@ function solarToLunar(year,month,day){
   return {year:lunarYear,month:lunarMonth,day:lunarDay,isLeap:isLeap,monthStr:monthStr,dayStr:dayStr,fullStr:lunarYear+'年'+monthStr+dayStr};
 }
 
+/** 农历转公历：农历年月日(是否闰月) → 公历年月日 */
+function lunarToSolar(lunarYear,lunarMonth,lunarDay,isLeap){
+  var offset=0;
+  for(var y=1900;y<lunarYear;y++){offset+=lYearDays(y);}
+  var leap=leapMonth(lunarYear);
+  var leapDone=false;
+  for(var m=1;m<lunarMonth;m++){
+    if(leap>0&&m===leap&&!leapDone){offset+=leapDays(lunarYear);leapDone=true;m--;}
+    else{offset+=monthDays(lunarYear,m);}
+  }
+  if(isLeap&&leap===lunarMonth){offset+=monthDays(lunarYear,lunarMonth);}
+  offset+=lunarDay-1;
+  var solarDate=new Date(Date.UTC(1900,0,31)+offset*86400000);
+  return {year:solarDate.getUTCFullYear(),month:solarDate.getUTCMonth()+1,day:solarDate.getUTCDate()};
+}
+
 /** 实时更新干支预览（起卦区） */
 function updateGanZhiPreview() {
   var gz = calcAllGanZhi();
@@ -1627,15 +1817,24 @@ function updateGanZhiPreview() {
   if (el2) el2.textContent = gz.monthJian;
   if (el3) el3.textContent = gz.dayGz;
   if (el4) el4.textContent = gz.hourGz;
-  // 更新农历显示
-  var year = parseInt(document.getElementById('yearInput').value) || 2026;
-  var month = parseInt(document.getElementById('monthInput').value) || 1;
-  var day = parseInt(document.getElementById('dayInput').value) || 1;
+  // 更新农历/公历对照显示
   var lunarEl = document.getElementById('gzpLunar');
   if (lunarEl) {
     try {
-      var lunar = solarToLunar(year, month, day);
-      lunarEl.textContent = lunar.fullStr;
+      if (state.calendarMode === 'lunar') {
+        var ly = parseInt(document.getElementById('lunarYearInput').value) || 2026;
+        var lm = parseInt(document.getElementById('lunarMonthInput').value) || 1;
+        var ld = parseInt(document.getElementById('lunarDayInput').value) || 1;
+        var lLeap = document.getElementById('lunarLeapInput').value === '1';
+        var sd = lunarToSolar(ly, lm, ld, lLeap);
+        lunarEl.textContent = '公历 ' + sd.year + '年' + sd.month + '月' + sd.day + '日';
+      } else {
+        var year = parseInt(document.getElementById('yearInput').value) || 2026;
+        var month = parseInt(document.getElementById('monthInput').value) || 1;
+        var day = parseInt(document.getElementById('dayInput').value) || 1;
+        var lunar = solarToLunar(year, month, day);
+        lunarEl.textContent = lunar.fullStr;
+      }
     } catch(e) {
       lunarEl.textContent = '—';
     }
@@ -1656,7 +1855,12 @@ function updateInterpretDisplay() {
   var lockEl = document.getElementById('divTimeLocked');
   if (lockEl && state.divTime) {
     var dt = state.divTime;
-    lockEl.textContent = '※ 起卦时间：' + dt.year + '年' + dt.month + '月' + dt.day + '日 ' + dt.hourZhi + '时（已锁定）';
+    var timeStr = dt.year + '年' + dt.month + '月' + dt.day + '日 ' + dt.hourZhi + '时（已锁定）';
+    try {
+      var lunar = solarToLunar(dt.year, dt.month, dt.day);
+      timeStr += ' ｜ 农历：' + lunar.fullStr + ' ' + dt.hourZhi + '时';
+    } catch(e) {}
+    lockEl.textContent = '※ 起卦时间：' + timeStr;
   } else if (lockEl) {
     lockEl.textContent = '';
   }
@@ -1670,6 +1874,7 @@ function resetAll() {
     coins: [false, false, false],
     yaoSelections: [null, null, null, null, null, null],
     mode: state.mode,
+    calendarMode: state.calendarMode,
     divTime: null  // 清除锁定的起卦时间
   };
 
