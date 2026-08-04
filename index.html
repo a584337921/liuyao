@@ -11,6 +11,7 @@
   --bg2: #f8f9fa;
   --bg3: #f1f3f5;
   --bg4: #e9ecef;
+  --bg-alt: #f8f9fa;
   --ink: #1a1a2e;
   --ink-bright: #000000;
   --muted: #6c757d;
@@ -59,6 +60,12 @@ body {
   color: var(--muted);
   margin-top: 0.3rem;
 }
+.app-header .version-badge {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+  font-family: monospace;
+}
 
 /* === Divination Info === */
 .divination-info {
@@ -73,6 +80,29 @@ body {
   color: var(--accent);
   margin-bottom: 0.8rem;
   text-align: center;
+}
+.cal-switch {
+  display: inline-flex;
+  gap: 0;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.cal-btn {
+  padding: 0.35rem 1.5rem;
+  border: none;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.cal-btn.active {
+  background: var(--ink);
+  color: var(--bg);
 }
 .divination-info .input-grid {
   display: grid;
@@ -119,6 +149,13 @@ body {
 .ganzhi-preview .gzp-item b {
   color: var(--accent);
   font-weight: 700;
+}
+.lunar-preview {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  padding: 0.3rem 0.5rem;
 }
 
 /* GuaZhi Display (in interpret input, read-only) */
@@ -865,13 +902,18 @@ body {
     <h1>六爻排盘</h1>
     <div class="subtitle">铜钱起卦 · 增删卜易法</div>
     <div class="source">依据《增删卜易》卷之一 占卦法章 · 野鹤老人著</div>
+    <div class="version-badge" id="appVersion">—</div>
   </header>
 
   <main>
     <!-- 占卦信息区（起卦前填写公历信息） -->
     <section class="divination-info" id="divinationInfo">
       <h2>占卦信息</h2>
-      <div class="input-grid">
+      <div class="cal-switch">
+        <button type="button" id="calSolarBtn" class="cal-btn active" onclick="switchCalendar('solar')">公历</button>
+        <button type="button" id="calLunarBtn" class="cal-btn" onclick="switchCalendar('lunar')">农历</button>
+      </div>
+      <div class="input-grid" id="solarInputGrid">
         <div class="input-field">
           <label>年份（公元）</label>
           <input type="number" id="yearInput" value="2026" min="1900" max="2100" oninput="updateGanZhiPreview()">
@@ -908,6 +950,51 @@ body {
             <option value="31">31日</option>
           </select>
         </div>
+      </div>
+      <div class="input-grid" id="lunarInputGrid" style="display:none">
+        <div class="input-field">
+          <label>年份（农历）</label>
+          <input type="number" id="lunarYearInput" value="2026" min="1900" max="2100" oninput="updateGanZhiPreview()">
+        </div>
+        <div class="input-field">
+          <label>月份</label>
+          <select id="lunarMonthInput" onchange="onLunarMonthChange()">
+            <option value="1">正月</option><option value="2">二月</option>
+            <option value="3">三月</option><option value="4">四月</option>
+            <option value="5">五月</option><option value="6" selected>六月</option>
+            <option value="7">七月</option><option value="8">八月</option>
+            <option value="9">九月</option><option value="10">十月</option>
+            <option value="11">冬月</option><option value="12">腊月</option>
+          </select>
+        </div>
+        <div class="input-field">
+          <label>日期</label>
+          <select id="lunarDayInput" onchange="updateGanZhiPreview()">
+            <option value="1">初一</option><option value="2">初二</option>
+            <option value="3">初三</option><option value="4">初四</option>
+            <option value="5">初五</option><option value="6">初六</option>
+            <option value="7">初七</option><option value="8">初八</option>
+            <option value="9">初九</option><option value="10">初十</option>
+            <option value="11">十一</option><option value="12">十二</option>
+            <option value="13">十三</option><option value="14">十四</option>
+            <option value="15">十五</option><option value="16">十六</option>
+            <option value="17">十七</option><option value="18">十八</option>
+            <option value="19">十九</option><option value="20">二十</option>
+            <option value="21">廿一</option><option value="22" selected>廿二</option>
+            <option value="23">廿三</option><option value="24">廿四</option>
+            <option value="25">廿五</option><option value="26">廿六</option>
+            <option value="27">廿七</option><option value="28">廿八</option>
+            <option value="29">廿九</option><option value="30">三十</option>
+          </select>
+        </div>
+        <div class="input-field" id="lunarLeapField" style="display:none">
+          <label>闰月</label>
+          <select id="lunarLeapInput" onchange="updateGanZhiPreview()">
+            <option value="0">非闰月</option>
+            <option value="1">闰月</option>
+          </select>
+        </div>
+      </div>
         <div class="input-field">
           <label>时辰</label>
           <select id="shichenInput" onchange="updateGanZhiPreview()">
@@ -936,6 +1023,9 @@ body {
         <span class="gzp-item">月建：<b id="gzpMonth">未</b></span>
         <span class="gzp-item">日干支：<b id="gzpDay">壬戌</b></span>
         <span class="gzp-item">时干支：<b id="gzpHour">甲辰</b></span>
+      </div>
+      <div class="lunar-preview" id="lunarPreview">
+        <b id="gzpLunar">—</b>
       </div>
     </section>
 
@@ -1117,6 +1207,7 @@ body {
         <div class="gz-item"><span class="gz-label">时干支</span><span class="gz-value" id="dispHourGz">—</span></div>
         <div class="gz-item"><span class="gz-label">求测</span><span class="gz-value" id="dispTopic">—</span></div>
       </div>
+      <div id="divTimeLocked" style="text-align:center;font-size:0.72rem;color:var(--muted);margin-top:0.3rem"></div>
       <!-- 神煞信息 -->
       <div class="shensha-display" id="shenshaDisplay" style="margin-top:0.6rem;display:flex;justify-content:center;gap:0.8rem;flex-wrap:wrap;font-size:0.75rem"></div>
       <!-- 完整术语区（第二步展示） -->
@@ -1152,6 +1243,12 @@ body {
  * 六爻排盘 — 增删卜易铜钱起卦法
  * 依据《增删卜易》卷之一 占卦法章
  *
+ * 版本号（主版本.次版本.修订号）— 每次更新时递增
+ * 主版本：重大架构/功能更新 | 次版本：新增功能/模块 | 修订号：bug修复/优化
+ */
+const APP_VERSION = 'v2.2.0';
+
+/**
  * 起卦规则：
  * - 背（花面/无字面）= 阳
  * - 字（字面/有字面）= 阴
@@ -1194,6 +1291,7 @@ var LIU_SHEN_KB = KB.LIU_SHEN;
 var FU_SHEN_RULES = KB.FU_SHEN_RULES;
 var DONG_BIAN_RULES = KB.DONG_BIAN_RULES;
 var HUO_ZHU_LIN = KB.HUO_ZHU_LIN;
+var NA_JIA_TIAN_GAN = KB.NA_JIA_TIAN_GAN;
 
 // ========== State ==========
 let state = {
@@ -1201,8 +1299,124 @@ let state = {
   lines: [],
   coins: [false, false, false], // false=字(阴), true=背(阳)
   yaoSelections: [null, null, null, null, null, null],
-  mode: 'coin' // 'coin' | 'select'
+  mode: 'coin', // 'coin' | 'select'
+  calendarMode: 'solar', // 'solar' | 'lunar'
+  divTime: null  // 起卦时锁定的年月日时辰（起卦完成时记录，解卦时使用）
 };
+
+// 显示版本号
+document.getElementById('appVersion').textContent = APP_VERSION;
+
+/** 公历/农历切换 */
+function switchCalendar(mode) {
+  state.calendarMode = mode;
+  var solarBtn = document.getElementById('calSolarBtn');
+  var lunarBtn = document.getElementById('calLunarBtn');
+  var solarGrid = document.getElementById('solarInputGrid');
+  var lunarGrid = document.getElementById('lunarInputGrid');
+  if (mode === 'lunar') {
+    lunarBtn.classList.add('active');
+    solarBtn.classList.remove('active');
+    solarGrid.style.display = 'none';
+    lunarGrid.style.display = '';
+    syncLunarFromSolar();
+    onLunarMonthChange();
+  } else {
+    solarBtn.classList.add('active');
+    lunarBtn.classList.remove('active');
+    solarGrid.style.display = '';
+    lunarGrid.style.display = 'none';
+    syncSolarFromLunar();
+  }
+  updateGanZhiPreview();
+}
+
+/** 公历→农历同步：切换到农历模式时，用当前公历值反查农历 */
+function syncLunarFromSolar() {
+  var y = parseInt(document.getElementById('yearInput').value) || 2026;
+  var m = parseInt(document.getElementById('monthInput').value) || 1;
+  var d = parseInt(document.getElementById('dayInput').value) || 1;
+  try {
+    var lunar = solarToLunar(y, m, d);
+    document.getElementById('lunarYearInput').value = lunar.year;
+    document.getElementById('lunarMonthInput').value = lunar.month;
+    document.getElementById('lunarDayInput').value = lunar.day;
+    var leapField = document.getElementById('lunarLeapField');
+    var leapInput = document.getElementById('lunarLeapInput');
+    if (lunar.isLeap) {
+      leapField.style.display = '';
+      leapInput.value = '1';
+    } else {
+      var leapM = leapMonth(lunar.year);
+      if (leapM === lunar.month) {
+        leapField.style.display = '';
+        leapInput.value = '0';
+      } else {
+        leapField.style.display = 'none';
+      }
+    }
+  } catch(e) {}
+}
+
+/** 农历→公历同步：切换回公历模式时，用当前农历值反查公历 */
+function syncSolarFromLunar() {
+  var y = parseInt(document.getElementById('lunarYearInput').value) || 2026;
+  var m = parseInt(document.getElementById('lunarMonthInput').value) || 1;
+  var d = parseInt(document.getElementById('lunarDayInput').value) || 1;
+  var isLeap = document.getElementById('lunarLeapInput').value === '1';
+  try {
+    var solar = lunarToSolar(y, m, d, isLeap);
+    document.getElementById('yearInput').value = solar.year;
+    document.getElementById('monthInput').value = solar.month;
+    document.getElementById('dayInput').value = solar.day;
+  } catch(e) {}
+}
+
+/** 农历月份变更：检查是否闰月，动态显示闰月选项 */
+function onLunarMonthChange() {
+  var y = parseInt(document.getElementById('lunarYearInput').value) || 2026;
+  var m = parseInt(document.getElementById('lunarMonthInput').value) || 1;
+  var leapM = leapMonth(y);
+  var leapField = document.getElementById('lunarLeapField');
+  var leapInput = document.getElementById('lunarLeapInput');
+  if (leapM === m) {
+    leapField.style.display = '';
+    leapInput.value = '0';
+  } else {
+    leapField.style.display = 'none';
+    leapInput.value = '0';
+  }
+  updateGanZhiPreview();
+}
+
+/** 获取当前输入的公历日期（农历模式自动转换） */
+function getCurrentSolarDate() {
+  if (state.calendarMode === 'lunar') {
+    var y = parseInt(document.getElementById('lunarYearInput').value) || 2026;
+    var m = parseInt(document.getElementById('lunarMonthInput').value) || 1;
+    var d = parseInt(document.getElementById('lunarDayInput').value) || 1;
+    var isLeap = document.getElementById('lunarLeapInput').value === '1';
+    return lunarToSolar(y, m, d, isLeap);
+  } else {
+    return {
+      year: parseInt(document.getElementById('yearInput').value) || 2026,
+      month: parseInt(document.getElementById('monthInput').value) || 1,
+      day: parseInt(document.getElementById('dayInput').value) || 1
+    };
+  }
+}
+
+/** 锁定起卦时间：在起卦完成的那一刻记录页面上的年月日时辰 */
+function lockDivTime() {
+  var sd = getCurrentSolarDate();
+  state.divTime = {
+    year: sd.year,
+    month: sd.month,
+    day: sd.day,
+    hourZhi: document.getElementById('shichenInput').value,
+    calendarMode: state.calendarMode
+  };
+}
 
 // 爻象符号映射
 const YAO_SYMBOLS = {
@@ -1287,6 +1501,7 @@ function confirmLine() {
     document.getElementById('btnConfirmCoin').disabled = true;
     document.getElementById('resultPreview').style.display = 'none';
     document.getElementById('rulesRef').style.display = 'none';
+    lockDivTime(); // 锁定起卦时间
     setTimeout(showHexagram, 300);
   }
 
@@ -1350,6 +1565,7 @@ function doPaiPan() {
     state.lines.push(YAO_SYMBOLS[state.yaoSelections[i]]);
   }
   document.getElementById('rulesRef').style.display = 'none';
+  lockDivTime(); // 锁定起卦时间
   showHexagram();
 }
 
@@ -1434,6 +1650,7 @@ function onlineRandom() {
   // 延迟显示排盘结果
   setTimeout(function() {
     document.getElementById('rulesRef').style.display = 'none';
+    lockDivTime(); // 锁定起卦时间
     showHexagram();
   }, 500);
 }
@@ -1517,19 +1734,76 @@ function hourToGanZhi(hourZhi, dayGanZhi) {
   return TIAN_GAN[hourGanIdx] + hourZhi;
 }
 
-/** 综合计算所有干支 */
+/** 综合计算所有干支（优先使用锁定的起卦时间） */
 function calcAllGanZhi() {
-  var year = parseInt(document.getElementById('yearInput').value) || 2026;
-  var month = parseInt(document.getElementById('monthInput').value) || 1;
-  var day = parseInt(document.getElementById('dayInput').value) || 1;
-  var hourZhi = document.getElementById('shichenInput').value;
+  var year, month, day, hourZhi;
+  if (state.divTime) {
+    year = state.divTime.year;
+    month = state.divTime.month;
+    day = state.divTime.day;
+    hourZhi = state.divTime.hourZhi;
+  } else {
+    var sd = getCurrentSolarDate();
+    year = sd.year;
+    month = sd.month;
+    day = sd.day;
+    hourZhi = document.getElementById('shichenInput').value;
+  }
 
   var yearGz = yearToGanZhi(year, month, day);
   var monthJian = getMonthJianZhi(month, day);
   var dayGz = dateToDayGanZhi(year, month, day);
   var hourGz = hourToGanZhi(hourZhi, dayGz);
 
-  return { yearGz: yearGz, monthJian: monthJian, dayGz: dayGz, hourGz: hourGz };
+  return { yearGz: yearGz, monthJian: monthJian, dayGz: dayGz, hourGz: hourGz, fromLocked: !!state.divTime };
+}
+
+// ========== 公历转农历 ==========
+var LUNAR_INFO = [0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,0x0a2e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a2d0,0x0d150,0x0f252,0x0d520];
+function lYearDays(y){var sum=348;for(var i=0x8000;i>0x8;i>>=1){sum+=(LUNAR_INFO[y-1900]&i)?1:0;}return sum+leapDays(y);}
+function leapMonth(y){return LUNAR_INFO[y-1900]&0xf;}
+function leapDays(y){if(leapMonth(y)){return(LUNAR_INFO[y-1900]&0x10000)?30:29;}return 0;}
+function monthDays(y,m){return(LUNAR_INFO[y-1900]&(0x10000>>m))?30:29;}
+function solarToLunar(year,month,day){
+  var baseDate=new Date(1900,0,31);
+  var objDate=new Date(year,month-1,day);
+  var offset=Math.round((objDate-baseDate)/86400000);
+  var temp=0;var lunarYear,lunarMonth,lunarDay,isLeap=false;
+  for(lunarYear=1900;lunarYear<2101&&offset>0;lunarYear++){
+    temp=lYearDays(lunarYear);offset-=temp;
+  }
+  if(offset<0){offset+=temp;lunarYear--;}
+  var leap=leapMonth(lunarYear);
+  for(lunarMonth=1;lunarMonth<13&&offset>0;lunarMonth++){
+    if(leap>0&&lunarMonth==leap+1&&!isLeap){lunarMonth--;isLeap=true;temp=leapDays(lunarYear);}
+    else{temp=monthDays(lunarYear,lunarMonth);}
+    if(isLeap&&lunarMonth==leap+1)isLeap=false;
+    offset-=temp;
+  }
+  if(offset==0&&leap>0&&lunarMonth==leap+1){if(isLeap){isLeap=false;}else{isLeap=true;lunarMonth--;}}
+  if(offset<0){offset+=temp;lunarMonth--;}
+  lunarDay=offset+1;
+  var monthNames=['正','二','三','四','五','六','七','八','九','十','冬','腊'];
+  var dayNames=['初一','初二','初三','初四','初五','初六','初七','初八','初九','初十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+  var monthStr=(isLeap?'闰':'')+monthNames[lunarMonth-1]+'月';
+  var dayStr=dayNames[lunarDay-1];
+  return {year:lunarYear,month:lunarMonth,day:lunarDay,isLeap:isLeap,monthStr:monthStr,dayStr:dayStr,fullStr:lunarYear+'年'+monthStr+dayStr};
+}
+
+/** 农历转公历：农历年月日(是否闰月) → 公历年月日 */
+function lunarToSolar(lunarYear,lunarMonth,lunarDay,isLeap){
+  var offset=0;
+  for(var y=1900;y<lunarYear;y++){offset+=lYearDays(y);}
+  var leap=leapMonth(lunarYear);
+  var leapDone=false;
+  for(var m=1;m<lunarMonth;m++){
+    if(leap>0&&m===leap&&!leapDone){offset+=leapDays(lunarYear);leapDone=true;m--;}
+    else{offset+=monthDays(lunarYear,m);}
+  }
+  if(isLeap&&leap===lunarMonth){offset+=monthDays(lunarYear,lunarMonth);}
+  offset+=lunarDay-1;
+  var solarDate=new Date(Date.UTC(1900,0,31)+offset*86400000);
+  return {year:solarDate.getUTCFullYear(),month:solarDate.getUTCMonth()+1,day:solarDate.getUTCDate()};
 }
 
 /** 实时更新干支预览（起卦区） */
@@ -1543,6 +1817,28 @@ function updateGanZhiPreview() {
   if (el2) el2.textContent = gz.monthJian;
   if (el3) el3.textContent = gz.dayGz;
   if (el4) el4.textContent = gz.hourGz;
+  // 更新农历/公历对照显示
+  var lunarEl = document.getElementById('gzpLunar');
+  if (lunarEl) {
+    try {
+      if (state.calendarMode === 'lunar') {
+        var ly = parseInt(document.getElementById('lunarYearInput').value) || 2026;
+        var lm = parseInt(document.getElementById('lunarMonthInput').value) || 1;
+        var ld = parseInt(document.getElementById('lunarDayInput').value) || 1;
+        var lLeap = document.getElementById('lunarLeapInput').value === '1';
+        var sd = lunarToSolar(ly, lm, ld, lLeap);
+        lunarEl.textContent = '公历 ' + sd.year + '年' + sd.month + '月' + sd.day + '日';
+      } else {
+        var year = parseInt(document.getElementById('yearInput').value) || 2026;
+        var month = parseInt(document.getElementById('monthInput').value) || 1;
+        var day = parseInt(document.getElementById('dayInput').value) || 1;
+        var lunar = solarToLunar(year, month, day);
+        lunarEl.textContent = lunar.fullStr;
+      }
+    } catch(e) {
+      lunarEl.textContent = '—';
+    }
+  }
 }
 
 /** 更新解卦区只读显示 */
@@ -1555,6 +1851,19 @@ function updateInterpretDisplay() {
   document.getElementById('dispHourGz').textContent = gz.hourGz;
   var topic = document.getElementById('topicInput').value || '未填写';
   document.getElementById('dispTopic').textContent = topic;
+  // 显示起卦时间锁定信息
+  var lockEl = document.getElementById('divTimeLocked');
+  if (lockEl && state.divTime) {
+    var dt = state.divTime;
+    var timeStr = dt.year + '年' + dt.month + '月' + dt.day + '日 ' + dt.hourZhi + '时（已锁定）';
+    try {
+      var lunar = solarToLunar(dt.year, dt.month, dt.day);
+      timeStr += ' ｜ 农历：' + lunar.fullStr + ' ' + dt.hourZhi + '时';
+    } catch(e) {}
+    lockEl.textContent = '※ 起卦时间：' + timeStr;
+  } else if (lockEl) {
+    lockEl.textContent = '';
+  }
 }
 
 /** 重置 */
@@ -1564,7 +1873,9 @@ function resetAll() {
     lines: [],
     coins: [false, false, false],
     yaoSelections: [null, null, null, null, null, null],
-    mode: state.mode
+    mode: state.mode,
+    calendarMode: state.calendarMode,
+    divTime: null  // 清除锁定的起卦时间
   };
 
   // 铜钱模式重置
@@ -2368,8 +2679,10 @@ function calcShenSha(yaoData, dayGanZhi, shiPos) {
 function renderShenSha(shenSha) {
   var html = '';
   // 卦身（紫色高亮）
-  if (shenSha.guaShen) {
+  if (shenSha.guaShen && shenSha.guaShen.yao) {
     html += '<span style="color:#7c3aed;font-weight:700">卦身：' + YAO_POSITIONS[shenSha.guaShen.pos - 1] + (shenSha.guaShen.yao.fullNaJia || shenSha.guaShen.yao.naJia) + '</span>';
+  } else if (shenSha.guaShen && shenSha.guaShen.branch) {
+    html += '<span style="color:#7c3aed;font-weight:700">卦身：不上卦（' + shenSha.guaShen.branch + '）</span>';
   } else {
     html += '<span style="color:#7c3aed;font-weight:700">卦身：不上卦</span>';
   }
@@ -2939,13 +3252,183 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
   document.getElementById('hexagramTerms').innerHTML = termsHtml;
 }
 
+/** 匹配黄金策分类（根据用户问题文字） */
+function matchHuangJinCeCategory(topic) {
+  var text = (topic || '').trim();
+  if (!text) return null;
+  var kb = window.LIUYAO_KB && window.LIUYAO_KB.BU_SHI_ZHENG_ZONG;
+  if (!kb || !kb.huangJinCe || !kb.huangJinCe.categories) return null;
+
+  // 关键词 → 分类名映射
+  var mapping = [
+    { keys: ['天气','下雨','雨','晴','雪','风','雷','阴天','气象'], cat: '天时' },
+    { keys: ['年运','年景','丰收','饥荒','瘟疫','灾害','国运'], cat: '年时' },
+    { keys: ['国家','朝代','政局','朝廷'], cat: '国朝' },
+    { keys: ['战争','打仗','出征','军事','胜负','交战','战斗'], cat: '征战' },
+    { keys: ['避难','逃难','躲避','避乱'], cat: '避乱' },
+    { keys: ['终身','一生','命运','寿命','前程','运气','八字'], cat: '身命' },
+    { keys: ['求学','拜师','老师','师傅','学艺','师傅','书馆'], cat: '求师' },
+    { keys: ['功名','考试','科举','升学','高考','考研','考公','考编','文凭','学历','录取','成绩','名次'], cat: '求名' },
+    { keys: ['升迁','升职','调动','仕途','官运','在任','罢官','免职','升官'], cat: '仕宦' },
+    { keys: ['婚姻','结婚','对象','相亲','恋爱','姻缘','嫁娶','未婚','已婚','配偶','男友','女友','谈对象','感情','复合','分手'], cat: '婚姻' },
+    { keys: ['怀孕','生产','生育','临产','胎儿','胎产','生男生女','预产期','安胎'], cat: '产育' },
+    { keys: ['收养','过继','买婢','雇人','招人','纳妾'], cat: '进人口' },
+    { keys: ['痘疹','水痘','天花','麻疹'], cat: '痘疹' },
+    { keys: ['病','疾病','疾','患病','生病','症状','发热','咳嗽','不舒服','身体'], cat: '病症' },
+    { keys: ['病情','病体','康复','痊愈','愈后','住院','出院','病危'], cat: '病体' },
+    { keys: ['药','医药','医生','治疗','处方','吃药','看医','问医','疗效'], cat: '医药' },
+    { keys: ['种植','庄稼','收成','种田','农业','耕种','水稻','小麦'], cat: '种作' },
+    { keys: ['蚕','桑','养蚕','蚕桑','丝绸'], cat: '蚕桑' },
+    { keys: ['六畜','牛','马','羊','鸡','鸭','鹅','猪','狗','猫','养殖','牲畜'], cat: '六畜' },
+    { keys: ['求财','买卖','生意','交易','经商','开店','投资','理财','利润','赚钱','财运','贸易','进货','出货','合伙生意'], cat: '商贾（求财买卖）' },
+    { keys: ['学馆','教书','开馆','私塾','束修'], cat: '学馆' },
+    { keys: ['词讼','官司','诉讼','起诉','被告','原告','官非','纠纷','法庭','打官司','起诉','应诉'], cat: '词讼（诉讼官非）' },
+    { keys: ['逃亡','逃跑','走失','离家','出走','在逃'], cat: '逃亡' },
+    { keys: ['丢失','失物','被盗','偷','贼','遗失','找东西','失脱'], cat: '失脱（盗贼捕盗捉贼）' },
+    { keys: ['家宅','房子','住宅','屋宅','搬家','迁居','风水','阳宅','宅运','买房','卖房','租房'], cat: '家宅' },
+    { keys: ['坟','墓','阴宅','葬','下葬','墓地','风水','陵园','祖坟'], cat: '坟墓（风水）' },
+    { keys: ['鬼','神','鬼神','邪祟','灵异','闹鬼','附身','神灵','仙家'], cat: '鬼神' },
+    { keys: ['出行','出差','旅游','远行','赴任','出门','旅行','外出'], cat: '出行' },
+    { keys: ['行人','归期','回来','回家','在外','远归','行人何时回','出门的人'], cat: '行人' },
+    { keys: ['船','舟','渡船','航运','水运','乘船'], cat: '舟船' }
+  ];
+
+  // 按匹配度排序
+  var scores = {};
+  for (var i = 0; i < mapping.length; i++) {
+    var m = mapping[i];
+    var score = 0;
+    for (var j = 0; j < m.keys.length; j++) {
+      if (text.indexOf(m.keys[j]) !== -1) score++;
+    }
+    if (score > 0) scores[m.cat] = (scores[m.cat] || 0) + score;
+  }
+
+  var bestCat = null;
+  var bestScore = 0;
+  for (var cat in scores) {
+    if (scores[cat] > bestScore) {
+      bestScore = scores[cat];
+      bestCat = cat;
+    }
+  }
+
+  if (!bestCat) return null;
+
+  // 从知识库中查找匹配的分类
+  for (var k = 0; k < kb.huangJinCe.categories.length; k++) {
+    if (kb.huangJinCe.categories[k].name === bestCat) {
+      return kb.huangJinCe.categories[k];
+    }
+  }
+  return null;
+}
+
+/** 查找何知章匹配歌诀 */
+function getHeZhiZhangMatches(topic, yaoData, yongShen) {
+  var kb = window.LIUYAO_KB && window.LIUYAO_KB.BU_SHI_ZHENG_ZONG;
+  if (!kb || !kb.fuWenSanPian || !kb.fuWenSanPian.heZhiZhang) return [];
+  var verses = kb.fuWenSanPian.heZhiZhang.verses;
+  var matches = [];
+  var text = (topic || '').trim();
+
+  // 根据问题关键词匹配何知章歌诀
+  var topicMap = [
+    { keys: ['父母','父亲','母亲','长辈','公婆','岳父','岳母'], patterns: ['父母疾', '父母殃'] },
+    { keys: ['子孙','孩子','子女','后代','怀孕','生产','生育','胎儿'], patterns: ['有子孙', '无子孙', '子孙疾', '子孙灾', '小儿死'] },
+    { keys: ['妻','财','妻子','老婆','财运','对象','结婚','婚姻','姻缘','嫁娶','男友','女友','丈夫','老公','配偶','谈对象','感情','恋爱'], patterns: ['妻有灾', '妻有孕', '有妻妾', '损妻房', '大豪富', '进外财', '进产业', '多贫贱', '田地增'] },
+    { keys: ['兄弟','姐妹','朋友','同辈'], patterns: ['兄弟亡'] },
+    { keys: ['官司','诉讼','官非','词讼','纠纷','法庭'], patterns: ['讼事休', '讼事多'] },
+    { keys: ['人口','家人','人丁','进人口'], patterns: ['旺六丁', '进人口'] },
+    { keys: ['家宅','房子','住宅','屋','搬家','迁居','宅运'], patterns: ['灶破损', '锅破漏', '屋宇新', '屋宇败', '两灶户', '宅不宁'] },
+    { keys: ['坟','墓','阴宅','葬','祖坟','陵园'], patterns: ['墓有风', '墓有水', '无香火', '无风水'] },
+    { keys: ['口舌','是非','争吵','争竞','小人'], patterns: ['见口舌', '口舌到', '多争竞'] },
+    { keys: ['贼','盗','失物','丢失','遗失','失脱'], patterns: ['遭贼徒', '见失脱', '失衣裳', '损六畜', '失了牛', '失了鸡'] },
+    { keys: ['病','疾病','患病','症状','发热','咳嗽','不舒服','身体','康复','痊愈'], patterns: ['痘疹病', '病要死', '多梦寐'] },
+    { keys: ['鬼','怪','邪祟','灵异','闹鬼','附身'], patterns: ['出鬼怪', '人投水', '有吊颈', '孝服来'] },
+    { keys: ['出行','出差','旅游','远行','出门','旅行','外出','行人','回家','回来','在外'], patterns: ['人不来'] },
+    { keys: ['功名','考试','升迁','仕途','官运','成绩','录取','升学'], patterns: ['旺六丁', '进人口', '富贵昌'] }
+  ];
+
+  for (var i = 0; i < topicMap.length; i++) {
+    var tm = topicMap[i];
+    var matched = false;
+    for (var j = 0; j < tm.keys.length; j++) {
+      if (text.indexOf(tm.keys[j]) !== -1) { matched = true; break; }
+    }
+    if (matched) {
+      for (var v = 0; v < verses.length; v++) {
+        for (var p = 0; p < tm.patterns.length; p++) {
+          if (verses[v].indexOf(tm.patterns[p]) !== -1) {
+            if (matches.indexOf(verses[v]) === -1) matches.push(verses[v]);
+          }
+        }
+      }
+    }
+  }
+
+  return matches.slice(0, 5); // 最多返回5条
+}
+
+/** 生成黄金策要诀HTML */
+function buildHuangJinCeHtml(category, yongShen, yaoData, monthJian, dayGanZhi) {
+  if (!category) return '';
+  var html = '<div class="huangjince-section" style="margin-top:1rem;padding:0.6rem 0.8rem;border-left:3px solid var(--accent4);background:var(--bg-alt);border-radius:0 4px 4px 0">';
+  html += '<h4 style="margin:0 0 0.4rem;color:var(--accent4);font-size:0.9rem">《卜筮正宗·黄金策》— ' + category.name + '</h4>';
+
+  if (category.yongShen) {
+    html += '<p style="font-size:0.8rem;margin:0.2rem 0;color:var(--muted)"><strong>用神</strong>：' + category.yongShen + '</p>';
+  }
+
+  // 选择最相关的规则（最多3条）
+  var rulesToShow = category.rules || [];
+  var maxRules = Math.min(rulesToShow.length, 3);
+
+  // 如果有用神信息，优先选择与用神相关的规则
+  if (yongShen && yongShen.yao) {
+    var yongLiuQin = yongShen.yao.liuQin;
+    var yongEl = yongShen.yao.element;
+    // 按相关性排序规则
+    var relevantRules = [];
+    var otherRules = [];
+    for (var r = 0; r < rulesToShow.length; r++) {
+      var rule = rulesToShow[r];
+      if (rule.indexOf(yongLiuQin) !== -1 || rule.indexOf(yongEl) !== -1) {
+        relevantRules.push(rule);
+      } else {
+        otherRules.push(rule);
+      }
+    }
+    // 合并：先显示相关的，再补充其他
+    rulesToShow = relevantRules.concat(otherRules);
+    maxRules = Math.min(rulesToShow.length, 4);
+  }
+
+  html += '<ul style="margin:0.3rem 0;padding-left:1.2rem;font-size:0.8rem;line-height:1.6">';
+  for (var i = 0; i < maxRules; i++) {
+    html += '<li>' + rulesToShow[i] + '</li>';
+  }
+  html += '</ul>';
+
+  // 显示要点
+  if (category.keyPoints && category.keyPoints.length > 0) {
+    html += '<p style="font-size:0.75rem;margin:0.3rem 0 0;color:var(--muted);font-style:italic">要点：' + category.keyPoints[0] + '</p>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
 /** 渲染大白话到 interpretResult（第三步：点击查看解析） */
 function renderPlainLanguage(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, monthGanZhi, dayGanZhi, xunKong, topic, gongInfo, trigrams, dongBianAnalyses, fuShenResult, sanHeJu, guaChongHe, yaoChongHe, fanYinFuYin, guiHunYouHun) {
   // 综合判断（全书版）
   renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, monthGanZhi, dayGanZhi, xunKong, topic, gongInfo, dongBianAnalyses, fuShenResult, sanHeJu, guaChongHe, yaoChongHe, fanYinFuYin, guiHunYouHun);
 
-  // 规则参考（增补全书内容）
-  var rulesHtml = '<h4>解卦依据（《增删卜易》）</h4><ul>';
+  // 规则参考（增补全书内容 + 卜筮正宗）
+  var rulesHtml = '<h4>解卦依据</h4>';
+
+  // 增删卜易部分
+  rulesHtml += '<p style="font-weight:bold;font-size:0.85rem;margin:0.5rem 0 0.2rem">一、《增删卜易》核心法则</p><ul style="font-size:0.8rem">';
   rulesHtml += '<li><strong>用神</strong>：占何事即以何爻为用神。旺相、逢生扶则吉，休囚、逢月破旬空则凶。</li>';
   rulesHtml += '<li><strong>元神</strong>：生用神之爻。旺动化进、化回头生则有力。</li>';
   rulesHtml += '<li><strong>忌神</strong>：克用神之爻。旺动克伤用神为凶，休囚空破则无力。</li>';
@@ -2957,6 +3440,46 @@ function renderPlainLanguage(yaoData, yongShen, yuanShen, jiShen, chouShen, mont
   rulesHtml += '<li><strong>三合局</strong>：申子辰合水、亥卯未合木、寅午戌合火、巳酉丑合金，合局增力。</li>';
   rulesHtml += '<li><strong>六冲六合</strong>：六冲主散，六合主聚。卦冲爻冲皆主散，冲中逢合另有玄机。</li>';
   rulesHtml += '</ul>';
+
+  // 卜筮正宗部分
+  var buShiKb = window.LIUYAO_KB && window.LIUYAO_KB.BU_SHI_ZHENG_ZONG;
+  if (buShiKb) {
+    rulesHtml += '<p style="font-weight:bold;font-size:0.85rem;margin:0.5rem 0 0.2rem">二、《卜筮正宗》补充法则</p><ul style="font-size:0.8rem">';
+
+    // 千金赋总断
+    if (buShiKb.qianJinFu && buShiKb.qianJinFu.keyPrinciples) {
+      rulesHtml += '<li><strong>千金赋总断</strong>：' + buShiKb.qianJinFu.summary + '</li>';
+    }
+
+    // 从十八论中选取关键理论
+    if (buShiKb.shiBaLun && buShiKb.shiBaLun.theories) {
+      var keyTheories = ['反吟卦', '伏吟卦', '绝处逢生', '克处逢生', '进神', '退神', '合处逢冲', '冲中逢合'];
+      for (var t = 0; t < buShiKb.shiBaLun.theories.length; t++) {
+        var th = buShiKb.shiBaLun.theories[t];
+        if (keyTheories.indexOf(th.name) !== -1) {
+          rulesHtml += '<li><strong>' + th.name + '</strong>：' + th.explanation + '</li>';
+        }
+      }
+    }
+
+    // 黄金策分类要诀
+    var hjcCat2 = matchHuangJinCeCategory(topic);
+    if (hjcCat2) {
+      rulesHtml += '<li><strong>黄金策·' + hjcCat2.name + '</strong>：' + hjcCat2.yongShen;
+      if (hjcCat2.keyPoints && hjcCat2.keyPoints.length > 0) {
+        rulesHtml += '。' + hjcCat2.keyPoints.join('；');
+      }
+      rulesHtml += '</li>';
+    }
+
+    rulesHtml += '</ul>';
+
+    // 冲突说明
+    if (buShiKb.conflictNote) {
+      rulesHtml += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;font-style:italic">' + buShiKb.conflictNote + '</p>';
+    }
+  }
+
   document.getElementById('interpretRulesRef').innerHTML = rulesHtml;
 }
 
@@ -3065,6 +3588,14 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
     }
     html += '<div class="summary-judgment judgment-ping">用神不上卦，需查伏神研判</div>';
     html += buildDongBianHtml(dongBianAnalyses);
+
+    // 用神不上卦时也显示黄金策要诀
+    var hjcCatEarly = matchHuangJinCeCategory(topic);
+    if (hjcCatEarly) {
+      html += buildHuangJinCeHtml(hjcCatEarly, null, yaoData, monthJian, dayGanZhi);
+    }
+
+    html += '<p style="color:var(--muted);font-size:0.7rem;margin-top:0.5rem;font-style:italic">※ 以上分析以《增删卜易》为主、《卜筮正宗》为辅推演，仅供参考研习。</p>';
     document.getElementById('interpretSummary').innerHTML = html;
     return;
   }
@@ -3208,7 +3739,27 @@ function renderSummary(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian,
   }
 
   html += '<div class="summary-judgment ' + judgmentClass + '">断曰：' + judgment + '</div>';
-  html += '<p style="color:var(--muted);font-size:0.7rem;margin-top:0.5rem;font-style:italic">※ 以上分析依据《增删卜易》之法推演，仅供参考研习。占事还需结合实际情形综合判断。</p>';
+
+  // === 卜筮正宗·黄金策分类要诀 ===
+  var hjcCat = matchHuangJinCeCategory(topic);
+  if (hjcCat) {
+    html += buildHuangJinCeHtml(hjcCat, yongShen, yaoData, monthJian, dayGanZhi);
+  }
+
+  // === 何知章速断 ===
+  var hzzMatches = getHeZhiZhangMatches(topic, yaoData, yongShen);
+  if (hzzMatches.length > 0) {
+    html += '<div class="hezhizhang-section" style="margin-top:0.6rem;padding:0.5rem 0.8rem;border-left:3px solid var(--accent3);background:var(--bg-alt);border-radius:0 4px 4px 0">';
+    html += '<h4 style="margin:0 0 0.3rem;color:var(--accent3);font-size:0.85rem">《卜筮正宗·何知章》速断参考</h4>';
+    html += '<ul style="margin:0.2rem 0;padding-left:1.2rem;font-size:0.75rem;line-height:1.6;color:var(--muted)">';
+    for (var hi = 0; hi < hzzMatches.length; hi++) {
+      html += '<li>' + hzzMatches[hi] + '</li>';
+    }
+    html += '</ul>';
+    html += '</div>';
+  }
+
+  html += '<p style="color:var(--muted);font-size:0.7rem;margin-top:0.5rem;font-style:italic">※ 以上分析以《增删卜易》为主、《卜筮正宗》为辅推演，仅供参考研习。占事还需结合实际情形综合判断。</p>';
 
   document.getElementById('interpretSummary').innerHTML = html;
 }
