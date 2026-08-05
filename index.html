@@ -7,79 +7,123 @@
 <title>六爻排盘 — 增删卜易 · 铜钱起卦</title>
 <style>
 :root {
-  --bg: #ffffff;
-  --bg2: #f8f9fa;
-  --bg3: #f1f3f5;
-  --bg4: #e9ecef;
-  --bg-alt: #f8f9fa;
-  --ink: #1a1a2e;
-  --ink-bright: #000000;
-  --muted: #6c757d;
-  --rule: #dee2e6;
-  --accent: #2563eb;
-  --accent2: #dc2626;
-  --accent3: #059669;
-  --accent4: #d97706;
-  --yang: #2563eb;
-  --radius: 4px;
+  --bg: #f7f3ea;
+  --bg2: #f2ede0;
+  --bg3: #ebe5d4;
+  --bg4: #e0d8c4;
+  --bg-alt: #f2ede0;
+  --ink: #2c2820;
+  --ink-bright: #1a1612;
+  --muted: #8a7f6b;
+  --rule: #d4cab5;
+  --accent: #5c4a3a;
+  --accent2: #a93226;
+  --accent3: #4a7050;
+  --accent4: #8b6914;
+  --yang: #5c4a3a;
+  --radius: 3px;
+  --seal-red: #a93226;
+  --ink-wash: rgba(44, 40, 32, 0.06);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 15px; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-family: 'STSong', 'SimSun', 'Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', serif;
   color: var(--ink);
   background: var(--bg);
-  line-height: 1.6;
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(140, 120, 90, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(140, 120, 90, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(140, 120, 90, 0.02) 0%, transparent 70%);
+  line-height: 1.7;
   min-height: 100vh;
 }
 .app-container {
   max-width: 720px;
   margin: 0 auto;
   padding: 1.5rem 1rem;
+  position: relative;
+}
+.app-container::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0, transparent 2px, rgba(140, 120, 90, 0.008) 2px, rgba(140, 120, 90, 0.008) 4px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(140, 120, 90, 0.006) 3px, rgba(140, 120, 90, 0.006) 6px);
+  pointer-events: none;
+  z-index: -1;
 }
 .app-header {
   text-align: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: none;
+  position: relative;
+}
+.app-header::after {
+  content: '';
+  display: block;
+  width: 60%;
+  margin: 0.8rem auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rule) 20%, var(--rule) 80%, transparent);
 }
 .app-header h1 {
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   color: var(--ink-bright);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.15em;
   margin-bottom: 0.15rem;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', 'STSong', serif;
 }
 .app-header .subtitle {
   font-size: 0.78rem;
   color: var(--muted);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
 }
 .app-header .source {
   font-size: 0.7rem;
   color: var(--muted);
   margin-top: 0.3rem;
+  font-style: italic;
 }
 .app-header .version-badge {
   font-size: 0.65rem;
   color: var(--muted);
   margin-top: 0.2rem;
-  font-family: monospace;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
 }
 
 /* === Divination Info === */
 .divination-info {
-  padding: 1rem;
+  padding: 1rem 1.2rem;
   background: var(--bg2);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   margin-bottom: 1.5rem;
+  box-shadow: 0 1px 4px var(--ink-wash);
+  position: relative;
+}
+.divination-info::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
 }
 .divination-info h2 {
   font-size: 1.1rem;
-  color: var(--accent);
+  color: var(--ink-bright);
   margin-bottom: 0.8rem;
   text-align: center;
+  font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', serif;
+  letter-spacing: 0.1em;
 }
 .cal-switch {
   display: inline-flex;
@@ -97,11 +141,12 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  transition: all 0.3s;
+  letter-spacing: 0.05em;
 }
 .cal-btn.active {
-  background: var(--ink);
+  background: var(--ink-bright);
   color: var(--bg);
 }
 .divination-info .input-grid {
@@ -117,8 +162,13 @@ body {
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   font-size: 0.85rem;
-  font-family: inherit;
+  font-family: 'STSong', 'SimSun', serif;
   width: 100%;
+  transition: border-color 0.3s;
+}
+.divination-info .input-field input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 .divination-info .input-field select {
   padding: 0.5rem 0.5rem;
@@ -128,8 +178,13 @@ body {
   border-radius: var(--radius);
   font-size: 0.85rem;
   cursor: pointer;
-  font-family: inherit;
+  font-family: 'STSong', 'SimSun', serif;
   width: 100%;
+  transition: border-color 0.3s;
+}
+.divination-info .input-field select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 /* GuaZhi Preview (in divination info) */
@@ -201,15 +256,16 @@ body {
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
+  transition: all 0.3s;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  letter-spacing: 0.05em;
 }
 .mode-btn:first-child { border-radius: var(--radius) 0 0 var(--radius); }
 .mode-btn:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
 .mode-btn.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
+  background: var(--ink-bright);
+  color: var(--bg);
+  border-color: var(--ink-bright);
 }
 .mode-btn:not(.active):hover {
   background: var(--bg4);
@@ -295,15 +351,15 @@ body {
   transition: transform 0.35s ease;
 }
 .coin-front {
-  background: linear-gradient(145deg, #e9ecef, #dee2e6);
-  border-color: #ced4da;
+  background: linear-gradient(145deg, #e8dcc8, #d4c5a8);
+  border-color: #b8a88a;
   color: var(--ink-bright);
   z-index: 2;
 }
 .coin-back {
-  background: linear-gradient(145deg, #adb5bd, #868e96);
-  border-color: #6c757d;
-  color: #fff;
+  background: linear-gradient(145deg, #6b5d48, #4a3f30);
+  border-color: #3a3024;
+  color: #e8dcc8;
   transform: rotateY(180deg);
   z-index: 1;
 }
@@ -418,25 +474,29 @@ body {
 .btn-primary {
   display: inline-block;
   padding: 0.6rem 1.8rem;
-  background: var(--accent);
-  color: #fff;
+  background: var(--ink-bright);
+  color: var(--bg);
   border: none;
   border-radius: var(--radius);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  letter-spacing: 0.05em;
-  transition: all 0.2s;
+  letter-spacing: 0.1em;
+  transition: all 0.3s;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  box-shadow: 0 2px 6px var(--ink-wash);
 }
 .btn-primary:hover {
-  background: #1d4ed8;
+  background: var(--accent);
   transform: translateY(-1px);
+  box-shadow: 0 3px 8px var(--ink-wash);
 }
 .btn-primary:active { transform: translateY(0); }
 .btn-primary:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 .btn-secondary {
   display: inline-block;
@@ -448,11 +508,12 @@ body {
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  font-family: 'STKaiti', 'KaiTi', serif;
 }
 .btn-secondary:hover {
-  border-color: var(--accent2);
-  color: var(--accent2);
+  border-color: var(--seal-red);
+  color: var(--seal-red);
 }
 
 /* === Divider === */
@@ -475,9 +536,10 @@ body {
 }
 .rules-reference h3 {
   font-size: 0.78rem;
-  color: var(--accent);
+  color: var(--ink-bright);
   margin-bottom: 0.4rem;
   font-weight: 600;
+  font-family: 'STKaiti', 'KaiTi', serif;
 }
 .rules-reference .rule-row {
   display: flex;
@@ -498,13 +560,14 @@ body {
 /* === Hexagram Result === */
 .hexagram-result {
   margin-top: 1.5rem;
-  padding: 1rem;
+  padding: 1rem 1.2rem;
   background: var(--bg2);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   display: none;
+  box-shadow: 0 1px 4px var(--ink-wash);
 }
-.hexagram-result.show { display: block; animation: fadeInUp 0.4s ease-out; }
+.hexagram-result.show { display: block; animation: fadeInUp 0.5s ease-out; }
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -545,13 +608,13 @@ body {
   font-size: 0.74rem;
 }
 .detail-table th {
-  background: var(--bg3);
-  color: var(--muted);
+  background: var(--bg4);
+  color: var(--ink);
   padding: 0.4rem 0.3rem;
   text-align: center;
   font-weight: 600;
   font-size: 0.65rem;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 2px solid var(--accent);
 }
 .detail-table td {
   padding: 0.35rem 0.3rem;
@@ -571,9 +634,10 @@ body {
 .yao-history.show { display: block; }
 .yao-history h3 {
   font-size: 0.78rem;
-  color: var(--accent);
+  color: var(--ink-bright);
   margin-bottom: 0.4rem;
   text-align: center;
+  font-family: 'STKaiti', 'KaiTi', serif;
 }
 .history-line {
   display: flex;
@@ -594,10 +658,19 @@ body {
   text-align: center;
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--rule);
+  border-top: none;
   font-size: 0.68rem;
   color: var(--muted);
   letter-spacing: 0.05em;
+  position: relative;
+}
+.app-footer::before {
+  content: '';
+  display: block;
+  width: 40%;
+  margin: 0 auto 1rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rule) 20%, var(--rule) 80%, transparent);
 }
 
 /* Responsive */
@@ -620,13 +693,16 @@ body {
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   display: none;
+  box-shadow: 0 1px 4px var(--ink-wash);
 }
 .interpret-input.show { display: block; animation: fadeInUp 0.5s ease-out; }
 .interpret-input h2 {
   font-size: 1.2rem;
-  color: var(--accent);
+  color: var(--ink-bright);
   margin-bottom: 1rem;
   text-align: center;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  letter-spacing: 0.1em;
 }
 .input-grid {
   display: grid;
@@ -673,9 +749,11 @@ body {
 .interpret-result.show { display: block; animation: fadeInUp 0.5s ease-out; }
 .interpret-result h2 {
   font-size: 1.3rem;
-  color: var(--accent);
+  color: var(--ink-bright);
   margin-bottom: 1rem;
   text-align: center;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  letter-spacing: 0.1em;
 }
 .interpret-meta {
   display: flex;
@@ -784,13 +862,13 @@ body {
   font-size: 0.78rem;
 }
 .full-yao-table th {
-  background: var(--bg3);
-  color: var(--muted);
+  background: var(--bg4);
+  color: var(--ink);
   padding: 0.5rem 0.4rem;
   text-align: center;
   font-weight: 600;
   font-size: 0.68rem;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 2px solid var(--accent);
   white-space: nowrap;
 }
 .full-yao-table td {
@@ -810,41 +888,44 @@ body {
 .full-yao-table .tag-xunkong { color: var(--accent); font-weight: 700; font-size: 0.68rem; }
 .full-yao-table .tag-richong { color: var(--accent4); font-weight: 600; font-size: 0.68rem; }
 .full-yao-table .tag-rihe { color: var(--accent3); font-weight: 600; font-size: 0.68rem; }
-.full-yao-table .yongshen-row td { background: rgba(37,99,235,0.08); }
-.full-yao-table .yuanshen-row td { background: rgba(5,150,105,0.06); }
-.full-yao-table .jishen-row td { background: rgba(220,38,38,0.06); }
+.full-yao-table .yongshen-row td { background: rgba(92, 74, 58, 0.08); }
+.full-yao-table .yuanshen-row td { background: rgba(74, 112, 80, 0.06); }
+.full-yao-table .jishen-row td { background: rgba(169, 50, 38, 0.06); }
 .full-yao-table .shi-ying { color: var(--accent); font-weight: 700; }
 .full-yao-table .yao-sym { font-size: 1.1rem; }
 .full-yao-table .yao-sym.yang { color: var(--accent); }
 .full-yao-table .yao-sym.yin { color: var(--accent3); }
-.full-yao-table .mark-ys { background: rgba(37,99,235,0.12); color: var(--accent); font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; }
-.full-yao-table .mark-yuan { background: rgba(5,150,105,0.12); color: var(--accent3); font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; }
-.full-yao-table .mark-ji { background: rgba(220,38,38,0.12); color: var(--accent2); font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; }
-.full-yao-table .mark-chou { background: rgba(217,119,6,0.12); color: var(--accent4); font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; }
-.full-yao-table .choushen-row td { background: rgba(217,119,6,0.06); }
+.full-yao-table .mark-ys { background: rgba(92, 74, 58, 0.12); color: var(--accent); font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; }
+.full-yao-table .mark-yuan { background: rgba(74, 112, 80, 0.12); color: var(--accent3); font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; }
+.full-yao-table .mark-ji { background: rgba(169, 50, 38, 0.12); color: var(--accent2); font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; }
+.full-yao-table .mark-chou { background: rgba(139, 105, 20, 0.12); color: var(--accent4); font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.65rem; }
+.full-yao-table .choushen-row td { background: rgba(139, 105, 20, 0.06); }
 .full-yao-table .tag-andong { color: var(--accent3); font-weight: 700; font-size: 0.68rem; }
 .full-yao-table .tag-tianshi { color: var(--accent); font-weight: 700; font-size: 0.68rem; }
 .full-yao-table .tag-richong { color: var(--accent2); font-weight: 700; font-size: 0.68rem; }
-.full-yao-table .tag-fushen { color: var(--accent4); font-weight: 700; font-size: 0.65rem; background: rgba(217,119,6,0.08); padding: 0 3px; border-radius: 3px; cursor: help; }
+.full-yao-table .tag-fushen { color: var(--accent4); font-weight: 700; font-size: 0.65rem; background: rgba(139, 105, 20, 0.08); padding: 0 3px; border-radius: 3px; cursor: help; }
 
 /* Analysis Bar */
-.interpret-analysis-bar .bar-status.strong { background: rgba(5,150,105,0.1); color: var(--accent3); }
-.interpret-analysis-bar .bar-status.weak { background: rgba(220,38,38,0.1); color: var(--accent2); }
+.interpret-analysis-bar .bar-status.strong { background: rgba(74, 112, 80, 0.1); color: var(--accent3); }
+.interpret-analysis-bar .bar-status.weak { background: rgba(169, 50, 38, 0.1); color: var(--accent2); }
 .interpret-analysis-bar .bar-status.neutral { background: var(--bg3); color: var(--muted); }
 
 /* Summary */
 .interpret-summary {
-  padding: 1rem;
+  padding: 1rem 1.2rem;
   background: var(--bg2);
   border: 1px solid var(--rule);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--ink-bright);
   border-radius: var(--radius);
   margin-bottom: 1rem;
+  box-shadow: 0 1px 3px var(--ink-wash);
 }
 .interpret-summary h3 {
-  font-size: 0.9rem;
-  color: var(--accent);
+  font-size: 0.95rem;
+  color: var(--ink-bright);
   margin-bottom: 0.5rem;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  letter-spacing: 0.08em;
 }
 .interpret-summary p {
   font-size: 0.82rem;
@@ -883,8 +964,9 @@ body {
 }
 .interpret-rules-ref h4 {
   font-size: 0.78rem;
-  color: var(--accent);
+  color: var(--ink-bright);
   margin-bottom: 0.3rem;
+  font-family: 'STKaiti', 'KaiTi', serif;
 }
 .interpret-rules-ref ul { padding-left: 1.2rem; }
 .interpret-rules-ref li { margin-bottom: 0.2rem; }
@@ -1014,7 +1096,7 @@ body {
         </div>
         <div class="input-field" style="grid-column: 1 / -1">
           <label>求测内容</label>
-          <input type="text" id="topicInput" placeholder="请输入您要问的事项，如：工作升职、近期财运、身体健康、姻缘感情…" style="padding:0.5rem 0.7rem;background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:var(--radius);font-size:0.85rem;font-family:inherit;width:100%">
+          <input type="text" id="topicInput" placeholder="请输入您要问的事项，如：工作升职、近期财运、身体健康、姻缘感情…" style="padding:0.5rem 0.7rem;background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:var(--radius);font-size:0.85rem;font-family:'STSong','SimSun',serif;width:100%">
         </div>
       </div>
       <!-- 干支预览（实时计算） -->
@@ -2680,11 +2762,11 @@ function renderShenSha(shenSha) {
   var html = '';
   // 卦身（紫色高亮）
   if (shenSha.guaShen && shenSha.guaShen.yao) {
-    html += '<span style="color:#7c3aed;font-weight:700">卦身：' + YAO_POSITIONS[shenSha.guaShen.pos - 1] + (shenSha.guaShen.yao.fullNaJia || shenSha.guaShen.yao.naJia) + '</span>';
+    html += '<span style="color:#6b4c6e;font-weight:700">卦身：' + YAO_POSITIONS[shenSha.guaShen.pos - 1] + (shenSha.guaShen.yao.fullNaJia || shenSha.guaShen.yao.naJia) + '</span>';
   } else if (shenSha.guaShen && shenSha.guaShen.branch) {
-    html += '<span style="color:#7c3aed;font-weight:700">卦身：不上卦（' + shenSha.guaShen.branch + '）</span>';
+    html += '<span style="color:#6b4c6e;font-weight:700">卦身：不上卦（' + shenSha.guaShen.branch + '）</span>';
   } else {
-    html += '<span style="color:#7c3aed;font-weight:700">卦身：不上卦</span>';
+    html += '<span style="color:#6b4c6e;font-weight:700">卦身：不上卦</span>';
   }
   html += '<span>驿马：<b style="color:var(--ink)">' + shenSha.yiMa + '</b></span>';
   html += '<span>桃花：<b style="color:var(--ink)">' + shenSha.taoHua + '</b></span>';
@@ -3142,7 +3224,7 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
       var bn = bianNaJiaMap[i];
       // 动爻紫色高亮，静爻灰色（变卦中静爻纳甲与本卦相同）
       if (yd.dong) {
-        bianHtml = '<span style="color:#7c3aed;font-weight:600">' + bn.naJia + '<br>' + bn.liuQin + '</span>';
+        bianHtml = '<span style="color:#6b4c6e;font-weight:600">' + bn.naJia + '<br>' + bn.liuQin + '</span>';
       } else {
         bianHtml = '<span style="color:#a8a29e">' + bn.naJia + '<br>' + bn.liuQin + '</span>';
       }
