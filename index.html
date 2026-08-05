@@ -121,6 +121,36 @@ body {
   opacity: 0.5;
 }
 
+/* Quick Tags */
+.topic-quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.quick-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  color: var(--ink);
+  background: var(--bg3);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  white-space: nowrap;
+}
+.quick-tag:hover {
+  background: var(--ink-bright);
+  color: var(--bg);
+  border-color: var(--ink-bright);
+}
+.quick-tag:active {
+  transform: scale(0.95);
+}
+
 /* === Divination Info === */
 .divination-info {
   padding: 1rem 1.2rem;
@@ -1175,6 +1205,20 @@ body {
         <div class="input-field" style="grid-column: 1 / -1">
           <label>求测内容</label>
           <input type="text" id="topicInput" placeholder="请输入您要问的事项，如：工作升职、近期财运、身体健康、姻缘感情…" style="padding:0.5rem 0.7rem;background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:var(--radius);font-size:0.85rem;font-family:'STSong','SimSun',serif;width:100%">
+          <div class="topic-quick-tags" id="topicQuickTags">
+            <span class="quick-tag" onclick="fillTopic('求测近期财运')">求财谋事</span>
+            <span class="quick-tag" onclick="fillTopic('求测工作升职')">工作升职</span>
+            <span class="quick-tag" onclick="fillTopic('求测婚姻感情')">婚姻感情</span>
+            <span class="quick-tag" onclick="fillTopic('求测身体健康')">健康疾病</span>
+            <span class="quick-tag" onclick="fillTopic('求测考试功名')">考试功名</span>
+            <span class="quick-tag" onclick="fillTopic('求测出行平安')">出行安全</span>
+            <span class="quick-tag" onclick="fillTopic('求测家宅风水')">家宅风水</span>
+            <span class="quick-tag" onclick="fillTopic('求测行人归期')">行人归期</span>
+            <span class="quick-tag" onclick="fillTopic('求测官司诉讼')">官司诉讼</span>
+            <span class="quick-tag" onclick="fillTopic('求测失物寻人')">失物寻人</span>
+            <span class="quick-tag" onclick="fillTopic('求测怀孕生产')">怀孕生产</span>
+            <span class="quick-tag" onclick="fillTopic('求测自身年运')">自身年运</span>
+          </div>
         </div>
       </div>
       <!-- 干支预览（实时计算） -->
@@ -1406,7 +1450,7 @@ body {
  * 版本号（主版本.次版本.修订号）— 每次更新时递增
  * 主版本：重大架构/功能更新 | 次版本：新增功能/模块 | 修订号：bug修复/优化
  */
-const APP_VERSION = 'v2.2.0';
+const APP_VERSION = 'v3.2.0';
 
 /**
  * 起卦规则：
@@ -1489,6 +1533,13 @@ function switchCalendar(mode) {
     syncSolarFromLunar();
   }
   updateGanZhiPreview();
+}
+
+/** 快捷标签填入求测内容 */
+function fillTopic(text) {
+  var input = document.getElementById('topicInput');
+  input.value = text;
+  input.focus();
 }
 
 /** 公历→农历同步：切换到农历模式时，用当前公历值反查农历 */
@@ -2298,7 +2349,7 @@ function autoDetectSpirit(topicText) {
     { keys: ['妻财','妻子','老婆','女命','对象','女友','女朋友','配偶','收入','工资','钱财','财运','求财','买卖','生意','投资','理财','工资','赚钱','借款','债务','贷款','分红','奖金','利润','融资'], spirit: '妻财' },
     { keys: ['子孙','孩子','子女','小孩','儿子','女儿','怀孕','生育','小孩','宝宝','儿童','学生','徒弟','晚辈','收养','医药','医生','医院','健康','疾病','痊愈','平安','安全','手术','产检'], spirit: '子孙' },
     { keys: ['兄弟','姐妹','手足','同辈','朋友','同事','同学','合伙人','竞争对手','争','夺','破财','劫财','同伙','兄','弟','姐','妹'], spirit: '兄弟' },
-    { keys: ['自身','自己','我的','寿命','运气','前程','命运','婚姻','姻缘','感情','恋爱','缘分','出行','搬家','迁移','家宅','风水','坟墓','阴宅','阳宅','考试','面试'], spirit: '世爻' }
+    { keys: ['自身','自己','我的','寿命','运气','前程','命运','婚姻','姻缘','感情','恋爱','缘分','出行','搬家','迁移','家宅','风水','坟墓','阴宅','阳宅','考试','面试','行人','失物','寻人','归期','平安'], spirit: '世爻' }
   ];
 
   // 按匹配度排序
