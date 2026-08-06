@@ -1078,6 +1078,197 @@ body {
   .full-yao-table { font-size: 0.68rem; }
   .full-yao-table th, .full-yao-table td { padding: 0.35rem 0.2rem; }
 }
+
+/* ========== 排盘记录弹层 ========== */
+.history-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(44, 40, 32, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 1rem;
+  overflow-y: auto;
+}
+.history-overlay.show { display: flex; }
+.history-panel {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.history-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+.history-panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--accent);
+  font-family: 'STKaiti', 'KaiTi', serif;
+}
+.history-panel-actions { display: flex; gap: 0.4rem; }
+.history-count {
+  padding: 0.4rem 1rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--rule);
+}
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+.history-item {
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.4rem;
+  background: var(--bg-alt);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.history-item:hover {
+  border-color: var(--accent);
+  background: var(--bg3);
+}
+.history-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+.history-item-gua {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-bright);
+  font-family: 'STKaiti', 'KaiTi', serif;
+}
+.history-item-dong {
+  font-size: 0.7rem;
+  color: var(--accent2);
+  background: rgba(169, 50, 38, 0.08);
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+}
+.history-item-topic {
+  font-size: 0.8rem;
+  color: var(--ink);
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-item-meta {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.7rem;
+  color: var(--muted);
+  gap: 0.1rem;
+}
+.history-item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.3rem;
+}
+.history-item-saved {
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.btn-del {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  background: transparent;
+  color: var(--accent2);
+  border: 1px solid var(--accent2);
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  transition: all 0.2s;
+}
+.btn-del:hover {
+  background: var(--accent2);
+  color: var(--bg);
+}
+.history-detail {
+  display: none;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 700px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 1rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.history-detail.show { display: block; }
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+.detail-gua {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-family: 'STKaiti', 'KaiTi', serif;
+}
+.detail-section {
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-alt);
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+}
+.detail-section p {
+  margin: 0.2rem 0;
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+.detail-section h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-family: 'STKaiti', 'KaiTi', serif;
+}
+.detail-yao-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.detail-yao-table th, .detail-yao-table td {
+  padding: 0.3rem 0.3rem;
+  text-align: center;
+  border: 1px solid var(--rule);
+}
+.detail-yao-table th {
+  background: var(--bg3);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .history-overlay { padding: 1rem 0.5rem; }
+  .history-panel { max-height: 90vh; }
+  .history-detail { max-height: 90vh; }
+  .history-panel-header { flex-direction: column; gap: 0.4rem; align-items: stretch; }
+  .history-panel-actions { justify-content: center; }
+}
 </style>
 </head>
 <body>
@@ -1093,6 +1284,7 @@ body {
       <span class="book-item">《黄金策》· 刘伯温</span>
       <span class="book-item">《千金赋》总断</span>
     </div>
+    <button class="btn-secondary" id="btnHistory" onclick="showHistoryPanel()" style="margin-top:0.6rem">排盘记录</button>
   </header>
 
   <main>
@@ -1451,7 +1643,7 @@ body {
  * 版本号（主版本.次版本.修订号）— 每次更新时递增
  * 主版本：重大架构/功能更新 | 次版本：新增功能/模块 | 修订号：bug修复/优化
  */
-const APP_VERSION = 'v4.0.0';
+const APP_VERSION = 'v4.1.0';
 
 /**
  * 起卦规则：
@@ -3009,6 +3201,9 @@ function interpret() {
 
   renderInterpretation(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, monthGanZhi, dayGanZhi, xunKong, topic, gongInfo, trigrams, dongBianAnalyses, fuShenResult, sanHeJu, guaChongHe, yaoChongHe, fanYinFuYin, guiHunYouHun);
 
+  // 保存排盘记录到 localStorage
+  addHistoryRecord(gz, topic, code, gongInfo, trigrams, yaoData, yongShen, bianCode);
+
   // 术语已渲染到 hexagramTerms，大白话已渲染到 interpretResult
   // 不自动切换显示，等待用户点击"查看解析"
 }
@@ -4029,7 +4224,238 @@ autoFillCurrentTime();
 // 初始化干支预览（起卦区实时计算）
 updateGanZhiPreview();
 
+// ========== 排盘记录功能（localStorage） ==========
+var HISTORY_KEY = 'liuyao_history';
+var HISTORY_MAX = 200;
+
+/** 读取所有排盘记录 */
+function getHistory() {
+  try {
+    var raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+/** 保存排盘记录数组 */
+function saveHistory(arr) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+/** 添加一条排盘记录（在 interpret 完成后调用） */
+function addHistoryRecord(gz, topic, code, gongInfo, trigrams, yaoData, yongShen, bianCode) {
+  var gua = lookupGua(code.split(''));
+  var guaName = gua.name || (trigrams.upper.nature + trigrams.lower.nature + trigrams.upper.name + trigrams.lower.name);
+  var bianGuaName = '';
+  if (bianCode) {
+    var bianGua = lookupGua(bianCode.split(''));
+    bianGuaName = bianGua.name || '';
+  }
+  var dongPositions = [];
+  for (var i = 0; i < 6; i++) {
+    if (yaoData[i].dong) dongPositions.push(i + 1);
+  }
+  var yongShenStr = '';
+  if (yongShen && yongShen.yao) {
+    yongShenStr = YAO_POSITIONS[yongShen.yao.position - 1] + ' ' + (yongShen.yao.fullNaJia || yongShen.yao.naJia) + '（' + yongShen.yao.liuQin + '）';
+  }
+  var record = {
+    id: Date.now(),
+    savedAt: new Date().toLocaleString('zh-CN'),
+    divTime: state.divTime ? (state.divTime.year + '年' + state.divTime.month + '月' + state.divTime.day + '日 ' + state.divTime.hourZhi + '时') : '',
+    yearGz: gz.yearGz,
+    monthJian: gz.monthGanZhi,
+    dayGz: gz.dayGz,
+    hourGz: gz.hourGz,
+    topic: topic || '未填写',
+    guaName: guaName,
+    gong: gongInfo.gong,
+    shi: gongInfo.shi,
+    ying: gongInfo.ying,
+    code: code,
+    bianCode: bianCode || '',
+    bianGuaName: bianGuaName,
+    dongPositions: dongPositions,
+    yaoData: yaoData.map(function(y) {
+      return {
+        pos: y.position,
+        fullNaJia: y.fullNaJia,
+        liuQin: y.liuQin,
+        element: y.element,
+        wangShuai: y.wangShuai,
+        liuShen: y.liuShen,
+        dong: y.dong,
+        shiYing: y.shiYing,
+        xunKong: y.xunKong,
+        yuePo: y.yuePo
+      };
+    }),
+    yongShen: yongShenStr,
+    termsHtml: document.getElementById('hexagramTerms') ? document.getElementById('hexagramTerms').innerHTML : '',
+    summaryHtml: document.getElementById('interpretSummary') ? document.getElementById('interpretSummary').innerHTML : ''
+  };
+  var history = getHistory();
+  history.unshift(record);
+  if (history.length > HISTORY_MAX) history = history.slice(0, HISTORY_MAX);
+  saveHistory(history);
+}
+
+/** 删除单条记录 */
+function deleteHistoryRecord(id) {
+  var history = getHistory();
+  history = history.filter(function(r) { return r.id !== id; });
+  saveHistory(history);
+  renderHistoryList();
+}
+
+/** 清空所有记录 */
+function clearAllHistory() {
+  if (!confirm('确定清空所有排盘记录？此操作不可撤销。')) return;
+  saveHistory([]);
+  renderHistoryList();
+}
+
+/** 导出记录为 JSON 文件 */
+function exportHistory() {
+  var history = getHistory();
+  if (history.length === 0) { alert('暂无排盘记录可导出'); return; }
+  var blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = '排盘记录_' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** 显示排盘记录面板 */
+function showHistoryPanel() {
+  document.getElementById('historyOverlay').classList.add('show');
+  renderHistoryList();
+}
+
+/** 隐藏排盘记录面板 */
+function hideHistoryPanel() {
+  document.getElementById('historyOverlay').classList.remove('show');
+  document.getElementById('historyDetail').classList.remove('show');
+}
+
+/** 渲染记录列表 */
+function renderHistoryList() {
+  var history = getHistory();
+  var listEl = document.getElementById('historyList');
+  var countEl = document.getElementById('historyCount');
+  countEl.textContent = '共 ' + history.length + ' 条';
+
+  if (history.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.85rem">暂无排盘记录</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < history.length; i++) {
+    var r = history[i];
+    var dongStr = r.dongPositions.length > 0 ? r.dongPositions.join('、') + '爻动' : '静卦';
+    html += '<div class="history-item" onclick="showHistoryDetail(' + r.id + ')">';
+    html += '<div class="history-item-header">';
+    html += '<span class="history-item-gua">' + r.guaName + '</span>';
+    html += '<span class="history-item-dong">' + dongStr + '</span>';
+    html += '</div>';
+    html += '<div class="history-item-topic">' + escapeHtml(r.topic) + '</div>';
+    html += '<div class="history-item-meta">';
+    html += '<span>' + r.divTime + '</span>';
+    html += '<span>' + r.yearGz + '年 ' + r.monthJian + '月 ' + r.dayGz + '日 ' + r.hourGz + '时</span>';
+    html += '</div>';
+    html += '<div class="history-item-footer">';
+    html += '<span class="history-item-saved">' + r.savedAt + '保存</span>';
+    html += '<button class="btn-del" onclick="event.stopPropagation();deleteHistoryRecord(' + r.id + ')" title="删除此记录">删</button>';
+    html += '</div>';
+    html += '</div>';
+  }
+  listEl.innerHTML = html;
+}
+
+/** 显示单条记录详情 */
+function showHistoryDetail(id) {
+  var history = getHistory();
+  var r = null;
+  for (var i = 0; i < history.length; i++) {
+    if (history[i].id === id) { r = history[i]; break; }
+  }
+  if (!r) return;
+
+  var detailEl = document.getElementById('historyDetail');
+  var html = '';
+  html += '<div class="detail-header">';
+  html += '<span class="detail-gua">' + r.guaName + '</span>';
+  html += '<button class="btn-secondary" onclick="document.getElementById(\'historyDetail\').classList.remove(\'show\')">返回列表</button>';
+  html += '</div>';
+  html += '<div class="detail-section">';
+  html += '<p><strong>求测内容：</strong>' + escapeHtml(r.topic) + '</p>';
+  html += '<p><strong>起卦时间：</strong>' + r.divTime + '</p>';
+  html += '<p><strong>干支：</strong>' + r.yearGz + '年 ' + r.monthJian + '月 ' + r.dayGz + '日 ' + r.hourGz + '时</p>';
+  if (r.bianGuaName) html += '<p><strong>变卦：</strong>' + r.bianGuaName + '</p>';
+  if (r.yongShen) html += '<p><strong>用神：</strong>' + r.yongShen + '</p>';
+  html += '<p><strong>宫位：</strong>' + r.gong + '宫 世' + r.shi + '应' + r.ying + '</p>';
+  html += '</div>';
+
+  // 爻象简表
+  html += '<div class="detail-section"><h4>爻象</h4><table class="detail-yao-table">';
+  html += '<tr><th>爻位</th><th>纳甲</th><th>六亲</th><th>六神</th><th>旺衰</th><th>世应</th><th>状态</th></tr>';
+  for (var j = 5; j >= 0; j--) {
+    var y = r.yaoData[j];
+    var status = [];
+    if (y.dong) status.push('动');
+    if (y.xunKong) status.push('空');
+    if (y.yuePo) status.push('月破');
+    html += '<tr>';
+    html += '<td>' + YAO_POSITIONS[j] + '</td>';
+    html += '<td>' + y.fullNaJia + '</td>';
+    html += '<td>' + y.liuQin + '</td>';
+    html += '<td>' + y.liuShen + '</td>';
+    html += '<td>' + y.wangShuai + '</td>';
+    html += '<td>' + y.shiYing + '</td>';
+    html += '<td>' + status.join('') + '</td>';
+    html += '</tr>';
+  }
+  html += '</table></div>';
+
+  // 详细排盘信息
+  if (r.termsHtml) {
+    html += '<div class="detail-section"><h4>排盘详情</h4>' + r.termsHtml + '</div>';
+  }
+  // 解卦分析
+  if (r.summaryHtml) {
+    html += '<div class="detail-section"><h4>解卦分析</h4>' + r.summaryHtml + '</div>';
+  }
+
+  detailEl.innerHTML = html;
+  detailEl.classList.add('show');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // 页面初始化完成
 </script>
+
+<!-- 排盘记录弹层 -->
+<div class="history-overlay" id="historyOverlay">
+  <div class="history-panel">
+    <div class="history-panel-header">
+      <h3>排盘记录</h3>
+      <div class="history-panel-actions">
+        <button class="btn-secondary" onclick="exportHistory()">导出</button>
+        <button class="btn-secondary" onclick="clearAllHistory()">清空</button>
+        <button class="btn-secondary" onclick="hideHistoryPanel()">关闭</button>
+      </div>
+    </div>
+    <div class="history-count" id="historyCount">共 0 条</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+  <div class="history-detail" id="historyDetail"></div>
+</div>
+
 </body>
 </html>
