@@ -73,51 +73,41 @@ body {
   font-size: 1.8rem;
   color: var(--ink-bright);
   letter-spacing: 0.15em;
-  margin-bottom: 0.15rem;
+  margin: 0;
   font-weight: 700;
   font-family: 'STKaiti', 'KaiTi', 'Kaiti SC', 'STSong', serif;
+}
+.app-header .version-badge {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.5rem;
+  font-size: 0.6rem;
+  color: var(--muted);
+  font-family: 'STKaiti', 'KaiTi', serif;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  white-space: nowrap;
 }
 .app-header .subtitle {
   font-size: 0.78rem;
   color: var(--muted);
   letter-spacing: 0.15em;
-}
-.app-header .source {
-  font-size: 0.7rem;
-  color: var(--muted);
-  margin-top: 0.3rem;
-  font-style: italic;
-}
-.app-header .version-badge {
-  font-size: 0.65rem;
-  color: var(--muted);
-  margin-top: 0.2rem;
-  font-family: 'STKaiti', 'KaiTi', serif;
-  display: inline-block;
-  padding: 0.05rem 0.5rem;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
+  margin-top: 0.25rem;
 }
 .app-header .book-ref {
-  margin-top: 0.6rem;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.8rem;
-  font-size: 0.7rem;
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
   color: var(--muted);
+  opacity: 0.75;
 }
 .app-header .book-ref .book-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
   font-family: 'STKaiti', 'KaiTi', serif;
   letter-spacing: 0.03em;
 }
-.app-header .book-ref .book-item::before {
-  content: '◆';
-  font-size: 0.55rem;
-  color: var(--accent);
+.app-header .book-ref .book-item + .book-item::before {
+  content: '·';
+  margin: 0 0.35rem;
   opacity: 0.5;
 }
 
@@ -728,9 +718,9 @@ body {
 /* Responsive */
 @media (max-width: 700px) {
   .app-header h1 { font-size: 1.5rem; letter-spacing: 0.1em; }
-  .app-header .book-ref { gap: 0.3rem 0.5rem; font-size: 0.65rem; }
+  .app-header .book-ref { font-size: 0.62rem; }
   .app-header .subtitle { font-size: 0.72rem; }
-  .app-header .source { font-size: 0.65rem; }
+  .app-header .version-badge { font-size: 0.55rem; }
   .app-container { padding: 1rem 0.6rem; }
   .coin-container { gap: 0.8rem; }
   .coin-wrapper { width: 80px; }
@@ -756,8 +746,7 @@ body {
 }
 @media (max-width: 480px) {
   .app-header h1 { font-size: 1.3rem; }
-  .app-header .book-ref { gap: 0.2rem 0.4rem; font-size: 0.6rem; }
-  .app-header .book-ref .book-item { font-size: 0.6rem; }
+  .app-header .book-ref { font-size: 0.58rem; }
   .app-container { padding: 0.8rem 0.5rem; }
   .divination-info .input-grid { grid-template-columns: 1fr 1fr; }
   .divination-info .input-field select, .divination-info .input-field input { font-size: 0.78rem; }
@@ -1274,15 +1263,11 @@ body {
 <body>
 <div class="app-container">
   <header class="app-header">
+    <span class="version-badge" id="appVersion">—</span>
     <h1>六爻排盘</h1>
     <div class="subtitle">铜钱起卦 · 增删卜易法</div>
-    <div class="source">依据《增删卜易》卷之一 占卦法章 · 野鹤老人著</div>
-    <div class="version-badge" id="appVersion">—</div>
     <div class="book-ref">
-      <span class="book-item">《增删卜易》· 野鹤老人</span>
-      <span class="book-item">《卜筮正宗》· 王洪绪</span>
-      <span class="book-item">《黄金策》· 刘伯温</span>
-      <span class="book-item">《千金赋》总断</span>
+      <span class="book-item">《增删卜易》</span><span class="book-item">《卜筮正宗》</span><span class="book-item">《黄金策》</span><span class="book-item">《易隐》</span><span class="book-item">《千金赋》</span>
     </div>
     <button class="btn-secondary" id="btnHistory" onclick="showHistoryPanel()" style="margin-top:0.6rem">排盘记录</button>
   </header>
