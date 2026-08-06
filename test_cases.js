@@ -12,6 +12,9 @@ kbContent = kbContent.replace('window.LIUYAO_KB = {', 'globalThis.LIUYAO_KB = {'
 eval(kbContent);
 var KB = globalThis.LIUYAO_KB;
 
+// ===== 加载 lunar-javascript =====
+const { Solar, Lunar, LunarYear } = require('./lunar.js');
+
 // ===== 基础常量 =====
 var TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 var DI_ZHI_12 = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
@@ -132,42 +135,15 @@ function getXunKong(ganZhi) {
 }
 
 function yearToGanZhi(year, month, day) {
-  var y = year;
-  if (month < 2 || (month === 2 && day < 4)) y = year - 1;
-  var offset = y - 1984;
-  var ganIdx = ((offset % 10) + 10) % 10;
-  var zhiIdx = ((offset % 12) + 12) % 12;
-  return TIAN_GAN[ganIdx] + DI_ZHI_12[zhiIdx];
+  return Solar.fromYmd(year, month, day).getLunar().getYearInGanZhiExact();
 }
 
-function getMonthJianZhi(month, day) {
-  var jieqi = [
-    {m:2, d:4, z:'寅'}, {m:3, d:6, z:'卯'}, {m:4, d:5, z:'辰'},
-    {m:5, d:6, z:'巳'}, {m:6, d:6, z:'午'}, {m:7, d:7, z:'未'},
-    {m:8, d:8, z:'申'}, {m:9, d:8, z:'酉'}, {m:10,d:8, z:'戌'},
-    {m:11,d:7, z:'亥'}, {m:12,d:7, z:'子'}, {m:1, d:6, z:'丑'}
-  ];
-  for (var i = 0; i < jieqi.length; i++) {
-    var jq = jieqi[i];
-    var nextJq = jieqi[(i + 1) % 12];
-    var curScore = month * 100 + day;
-    var jqScore = jq.m * 100 + jq.d;
-    var nextScore = nextJq.m * 100 + nextJq.d;
-    if (nextScore > jqScore) {
-      if (curScore >= jqScore && curScore < nextScore) return jq.z;
-    } else {
-      if (curScore >= jqScore || curScore < nextScore) return jq.z;
-    }
-  }
-  return '寅';
+function getMonthJianZhi(year, month, day) {
+  return Solar.fromYmd(year, month, day).getLunar().getMonthZhiExact();
 }
 
 function dateToDayGanZhi(year, month, day) {
-  var baseDate = new Date(1900, 0, 1);
-  var targetDate = new Date(year, month - 1, day);
-  var diffDays = Math.round((targetDate - baseDate) / 86400000);
-  var dayIdx = ((diffDays + 10) % 60 + 60) % 60;
-  return LIU_SHI_JIA_ZI_ARR[dayIdx];
+  return Solar.fromYmd(year, month, day).getLunar().getDayInGanZhi();
 }
 
 function hourToGanZhi(hourZhi, dayGanZhi) {
@@ -632,25 +608,28 @@ assert(ss_gou.guaShen.branch === '午', '天风姤卦身=午(阴世从午数到1
 assert(ss_gou.guaShen.pos === 4, '天风姤卦身在四爻(壬午火)');
 
 // ====================================================================
-// 测试14: 干支计算验证
+// 测试14: 干支计算验证（使用 lunar-javascript 精确节气）
 // ====================================================================
-testHeader('测试14: 干支计算验证');
+testHeader('测试14: 干支计算验证（lunar-javascript精确节气）');
 
 assert(yearToGanZhi(2024, 3, 1) === '甲辰', '2024年甲辰');
 assert(yearToGanZhi(2025, 6, 1) === '乙巳', '2025年乙巳');
 assert(yearToGanZhi(2026, 8, 5) === '丙午', '2026年丙午');
 assert(yearToGanZhi(1984, 6, 1) === '甲子', '1984年甲子');
 assert(yearToGanZhi(2024, 2, 3) === '癸卯', '2024.2.3立春前属癸卯');
-assert(yearToGanZhi(2024, 2, 4) === '甲辰', '2024.2.4立春后属甲辰');
+assert(yearToGanZhi(2024, 2, 5) === '甲辰', '2024.2.5立春后属甲辰(精确:立春在2月4日)');
+assert(yearToGanZhi(2026, 2, 4) === '乙巳', '2026.2.4立春前属乙巳(精确:立春在2月4日)');
+assert(yearToGanZhi(2026, 2, 5) === '丙午', '2026.2.5立春后属丙午');
 
-assert(getMonthJianZhi(2, 4) === '寅', '2月4日月建寅');
-assert(getMonthJianZhi(3, 6) === '卯', '3月6日月建卯');
-assert(getMonthJianZhi(8, 5) === '未', '8月5日月建未');
-assert(getMonthJianZhi(8, 8) === '申', '8月8日月建申');
-assert(getMonthJianZhi(12, 7) === '子', '12月7日月建子');
-assert(getMonthJianZhi(1, 6) === '丑', '1月6日月建丑');
+assert(getMonthJianZhi(2026, 2, 5) === '寅', '2026.2.5月建寅(立春后)');
+assert(getMonthJianZhi(2026, 3, 6) === '卯', '2026.3.6月建卯(惊蛰后)');
+assert(getMonthJianZhi(2026, 8, 5) === '未', '2026.8.5月建未(立秋前)');
+assert(getMonthJianZhi(2026, 8, 8) === '申', '2026.8.8月建申(立秋后)');
+assert(getMonthJianZhi(2026, 12, 8) === '子', '2026.12.8月建子(大雪后)');
+assert(getMonthJianZhi(2026, 1, 6) === '丑', '2026.1.6月建丑(小寒后)');
 
 assert(dateToDayGanZhi(1900, 1, 1) === '甲戌', '1900-01-01甲戌日');
+assert(dateToDayGanZhi(2026, 8, 6) === '壬子', '2026-08-06壬子日');
 
 // 五鼠遁时干支
 assert(hourToGanZhi('子', '甲戌') === '甲子', '甲日子时甲子');
@@ -769,7 +748,7 @@ for (var sp = 0; sp < spiritTests.length; sp++) {
 testHeader('测试20: 完整排盘场景 — 乾为天 + 2026-08-05');
 
 var scYear = yearToGanZhi(2026, 8, 5);
-var scMonth = getMonthJianZhi(8, 5);
+var scMonth = getMonthJianZhi(2026, 8, 5);
 var scDay = dateToDayGanZhi(2026, 8, 5);
 console.log('  INFO | 2026-08-05: 年=' + scYear + ' 月建=' + scMonth + ' 日=' + scDay);
 
