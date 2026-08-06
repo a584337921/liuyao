@@ -1634,6 +1634,7 @@ body {
 </div>
 
 <script src="lunar.js"></script>
+<script src="yiyin.js"></script>
 <script src="knowledge.js"></script>
 <script>
 /**
@@ -1688,6 +1689,7 @@ var LIU_SHEN_KB = KB.LIU_SHEN;
 var FU_SHEN_RULES = KB.FU_SHEN_RULES;
 var DONG_BIAN_RULES = KB.DONG_BIAN_RULES;
 var HUO_ZHU_LIN = KB.HUO_ZHU_LIN;
+var YI_YIN = KB.YI_YIN;
 var NA_JIA_TIAN_GAN = KB.NA_JIA_TIAN_GAN;
 
 // ========== State ==========
@@ -3606,6 +3608,29 @@ function renderTerms(yaoData, yongShen, yuanShen, jiShen, chouShen, monthJian, m
   document.getElementById('hexagramTerms').innerHTML = termsHtml;
 }
 
+/** 按关键词检索《易隐》条目（用于解读时引用古籍） */
+function findYiYinSections(keywords, limit) {
+  if (!YI_YIN || !YI_YIN.sections || !YI_YIN.sections.length) return [];
+  if (typeof keywords === 'string') keywords = [keywords];
+  keywords = (keywords || []).filter(Boolean);
+  if (!keywords.length) return YI_YIN.sections.slice(0, limit || 3);
+
+  var scored = YI_YIN.sections.map(function (sec) {
+    var score = 0;
+    var haystack = (sec.title + ' ' + sec.tags.join(' ') + ' ' + sec.text).toLowerCase();
+    keywords.forEach(function (kw) {
+      var k = kw.toLowerCase();
+      if (sec.title.indexOf(kw) !== -1) score += 5;
+      if (sec.tags && sec.tags.indexOf(kw) !== -1) score += 3;
+      if (haystack.indexOf(k) !== -1) score += 1;
+    });
+    return { sec: sec, score: score };
+  });
+
+  scored.sort(function (a, b) { return b.score - a.score; });
+  return scored.filter(function (x) { return x.score > 0; }).slice(0, limit || 5).map(function (x) { return x.sec; });
+}
+
 /** 匹配黄金策分类（根据用户问题文字） */
 function matchHuangJinCeCategory(topic) {
   var text = (topic || '').trim();
@@ -3831,6 +3856,25 @@ function renderPlainLanguage(yaoData, yongShen, yuanShen, jiShen, chouShen, mont
     // 冲突说明
     if (buShiKb.conflictNote) {
       rulesHtml += '<p style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;font-style:italic">' + buShiKb.conflictNote + '</p>';
+    }
+  }
+
+  // 易隐部分
+  if (YI_YIN && YI_YIN.sections && YI_YIN.sections.length) {
+    var yiyinKeywords = [];
+    var yiyinCat = (typeof hjcCat2 !== 'undefined' && hjcCat2 && hjcCat2.name) ? hjcCat2.name : '';
+    if (yiyinCat) yiyinKeywords.push(yiyinCat);
+    if (topic) yiyinKeywords.push(topic);
+    if (yongShen && yongShen.yao && yongShen.yao.liuQin) yiyinKeywords.push(yongShen.yao.liuQin);
+    var yiyinMatches = findYiYinSections(yiyinKeywords, 3);
+    if (yiyinMatches.length) {
+      rulesHtml += '<p style="font-weight:bold;font-size:0.85rem;margin:0.5rem 0 0.2rem">三、《易隐》参考</p><ul style="font-size:0.8rem">';
+      for (var yy = 0; yy < yiyinMatches.length; yy++) {
+        var yySec = yiyinMatches[yy];
+        var yyText = yySec.text.length > 220 ? yySec.text.slice(0, 220) + '……' : yySec.text;
+        rulesHtml += '<li><strong>' + yySec.title + '</strong>：' + yyText.replace(/\\n/g, ' ') + '</li>';
+      }
+      rulesHtml += '</ul>';
     }
   }
 

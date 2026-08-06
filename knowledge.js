@@ -2153,6 +2153,16 @@ window.LIUYAO_KB = {
         },
       ]
     }
-  }
+  },
+
+  // ========== 《易隐》知识库 ==========
+  // 依据《易隐》(清·曹九锡著) 文本结构化提取
+  // 与《增删卜易》《卜筮正宗》《火珠林》互补使用；遇观点冲突时以《增删卜易》为准
+  YI_YIN: (typeof YI_YIN !== 'undefined' ? YI_YIN : {
+    source: '《易隐》(清·曹九锡著)',
+    note: '尚未加载 yiyin.js，请在 index.html 中先引入 yiyin.js。',
+    totalSections: 0,
+    sections: []
+  })
 
 };
